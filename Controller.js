@@ -95,7 +95,7 @@ async function CommonFunForCatch(url, method, accessToken, requestData = null) {
     ) {
       throw new Error("Invalid token");
     } else {
-      throw new Error("Failed to create user in Zoho CRM!");
+      throw new Error("Failed to create user in Zoho CRM");
     }
   } catch (error) {
     throw error;
@@ -106,8 +106,9 @@ const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 exports.Pay = async (req, res) => {
   try {
-    const { amount, currency } = req.body;
-    const convertedAmount = currency === "INR" ? amount * 100 : amount;
+    let { amount, currency } = req.body;
+    const convertedAmount =
+      currency === "EUR" ? parseFloat(amount) * 100 : parseFloat(amount);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: convertedAmount,
       currency: currency,
@@ -124,20 +125,18 @@ const zohoApiBaseUrl = "https://www.zohoapis.eu/crm/v2/Customer";
 
 exports.addUser = async (req, res) => {
   try {
-    const accessToken = req.headers.authorization;
-
+    await refreshAccessToken();
     const response = await axios.post(
       zohoApiBaseUrl,
       JSON.stringify(req.body),
       {
         headers: {
-          Authorization: accessToken,
+          Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
           "Content-Type": "application/json",
         },
       }
     );
 
-    console.log("response.data======>>>", response.data);
     if (response.status === 200 || response.status === 201) {
       const responseData = response.data;
       if (
@@ -149,7 +148,7 @@ exports.addUser = async (req, res) => {
         const getUserUrl = `${zohoApiBaseUrl}/${userId}`;
         const getUserResponse = await axios.get(getUserUrl, {
           headers: {
-            Authorization: accessToken,
+            Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
             "Content-Type": "application/json",
           },
         });
@@ -161,7 +160,6 @@ exports.addUser = async (req, res) => {
             .status(getUserResponse.status)
             .json({ message: "Failed to fetch user data" });
         }
-        console.log(getUserResponse.data);
       } else {
         res
           .status(response.status)
@@ -208,14 +206,14 @@ const zohoApiBaseUrlforPayment = "https://www.zohoapis.eu/crm/v2/Payment";
 
 exports.Payment = async (req, res) => {
   try {
-    const accessToken = req.headers.authorization;
+    await refreshAccessToken();
 
     const response = await axios.post(
       zohoApiBaseUrlforPayment,
       JSON.stringify(req.body),
       {
         headers: {
-          Authorization: accessToken,
+          Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
           "Content-Type": "application/json",
         },
       }
@@ -232,7 +230,7 @@ exports.Payment = async (req, res) => {
         const getUserUrl = `${zohoApiBaseUrlforPayment}/${userId}`;
         const getUserResponse = await axios.get(getUserUrl, {
           headers: {
-            Authorization: accessToken,
+            Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
             "Content-Type": "application/json",
           },
         });
@@ -286,19 +284,20 @@ const zohoApiBaseUrlforOrder = "https://www.zohoapis.eu/crm/v5/Sales_Orders";
 
 exports.Order = async (req, res) => {
   try {
-    const accessToken = req.headers.authorization;
+    await refreshAccessToken();
+
+    console.log("Order");
 
     const response = await axios.post(
       zohoApiBaseUrlforOrder,
       JSON.stringify(req.body),
       {
         headers: {
-          Authorization: accessToken,
+          Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
           "Content-Type": "application/json",
         },
       }
     );
-    console.log(response.data);
     if (response.status === 200 || response.status === 201) {
       const responseData = response.data;
       if (
@@ -310,7 +309,7 @@ exports.Order = async (req, res) => {
         const getUserUrl = `${zohoApiBaseUrlforOrder}/${userId}`;
         const getUserResponse = await axios.get(getUserUrl, {
           headers: {
-            Authorization: accessToken,
+            Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
             "Content-Type": "application/json",
           },
         });
@@ -363,13 +362,13 @@ const zohoApiBaseUrlforInvoice = "https://www.zohoapis.eu/crm/v5/Invoices";
 
 exports.Invoice = async (req, res) => {
   try {
-    const accessToken = req.headers.authorization;
+    await refreshAccessToken();
     const response = await axios.post(
       zohoApiBaseUrlforInvoice,
       JSON.stringify(req.body),
       {
         headers: {
-          Authorization: accessToken,
+          Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
           "Content-Type": "application/json",
         },
       }
@@ -386,7 +385,7 @@ exports.Invoice = async (req, res) => {
         const getUserUrl = `${zohoApiBaseUrlforInvoice}/${userId}`;
         const getUserResponse = await axios.get(getUserUrl, {
           headers: {
-            Authorization: accessToken,
+            Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
             "Content-Type": "application/json",
           },
         });
@@ -428,7 +427,7 @@ exports.Invoice = async (req, res) => {
           await browser.close();
 
           const messageData = {
-            from: "Excited User <yaman@sandbox9c68f09718d943bf94c0d68423461948.mailgun.org>",
+            from: "Testing <Co-Bloc@sandboxc10639357b204264abb15480215d1d14.mailgun.org>",
             to: invoiceData.Customer_Email,
             subject: "Invoice PDF",
             text: "Please find the PDF attachment.",
@@ -439,7 +438,6 @@ exports.Invoice = async (req, res) => {
               },
             ],
           };
-
           client.messages
             .create(process.env.DOMAIN, messageData)
             .then((response) => {
@@ -497,14 +495,14 @@ const zohoApiBaseUrlForSupport = "https://www.zohoapis.eu/crm/v5/Support";
 
 exports.Support = async (req, res) => {
   try {
-    const accessToken = req.headers.authorization;
+    await refreshAccessToken();
 
     const response = await axios.post(
       zohoApiBaseUrlForSupport,
       JSON.stringify(req.body),
       {
         headers: {
-          Authorization: accessToken,
+          Authorization: `Zoho-oauthtoken ${globalAccessToken}`,
           "Content-Type": "application/json",
         },
       }
