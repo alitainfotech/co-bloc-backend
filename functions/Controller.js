@@ -449,7 +449,7 @@ exports.Invoice = async (req, res) => {
           await browser.close();
 
           const messageData = {
-            from: "Co-Bloc <Co-Bloc@sandboxc10639357b204264abb15480215d1d14.mailgun.org>",
+            from: "Co-Bloc <Co-Bloc@www.co-bloc.fr>",
             to: invoiceData.Customer_Email,
             subject: `New Invoice from Co-Bloc #${invoiceData.Invoice_Number}`,
             html: `<!DOCTYPE html>
