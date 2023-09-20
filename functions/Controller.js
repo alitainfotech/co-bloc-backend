@@ -377,7 +377,6 @@ const zohoApiBaseUrlforInvoice = "https://www.zohoapis.eu/crm/v5/Invoices";
 exports.Invoice = async (req, res) => {
   try {
     const accessToken = req.headers.authorization.split(" ");
-    console.info("accessToken => ", accessToken);
     var bytes = CryptoJS.AES.decrypt(accessToken[1], process.env.SECRET_KEY);
     var decryptToken = bytes.toString(CryptoJS.enc.Utf8);
 
@@ -414,6 +413,7 @@ exports.Invoice = async (req, res) => {
           const client = mailgun.client({
             username: "api",
             key: process.env.API_KEY,
+            url: process.env.MAILGUN_URL
           });
           const ejsTemplatePath = path.join(__dirname, "./pdfIndex.ejs");
           const templateContent = fs.readFileSync(ejsTemplatePath, "utf8");
@@ -449,7 +449,7 @@ exports.Invoice = async (req, res) => {
           await browser.close();
 
           const messageData = {
-            from: "Co-Bloc <Co-Bloc@www.co-bloc.fr>",
+            from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
             to: invoiceData.Customer_Email,
             subject: `New Invoice from Co-Bloc #${invoiceData.Invoice_Number}`,
             html: `<!DOCTYPE html>
@@ -485,7 +485,6 @@ exports.Invoice = async (req, res) => {
               },
             ],
           };
-          console.info("invoiceData => ", invoiceData);
           client.messages
             .create(process.env.DOMAIN, messageData)
             .then((response) => {
