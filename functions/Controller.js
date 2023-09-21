@@ -23,7 +23,7 @@ exports.RefreshAccessToken = async (req, res) => {
     const clientId = process.env.ZOHO_CLIENT_ID;
     const clientSecret = process.env.ZOHO_CLIENT_SECRET;
     const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
-    const refreshTokenURL = `${process.env.ZOHO_CRM_V2_URL}/token`;
+    const refreshTokenURL = `${process.env.REFRESH_TOKEN_URL}/token`;
 
     const data = {
         grant_type: 'refresh_token',
@@ -47,11 +47,11 @@ exports.RefreshAccessToken = async (req, res) => {
             return res.json({ accessToken: bcryptToken });
         } else {
             console.error('Error refreshing access token. Response:', responseData);
-            throw new Error('Error refreshing access token');
+            res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") });
         }
     } catch (error) {
         console.error('Error refreshing access token:', error);
-        throw new Error('Error refreshing access token');
+        res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") });
     }
 }
 
@@ -109,7 +109,6 @@ exports.addUser = async (req, res) => {
             return res.status(checkUserResponse.status).json(checkUserResponse.data);
         }
     } catch (error) {
-        console.log(error);
         if (error.response && (error.response.status === 401 || error.response.data.code === 'INVALID_TOKEN')) {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
@@ -212,6 +211,7 @@ exports.Order = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
         }
     } catch (error) {
+        console.log(error);
         if (error.response && (error.response.status === 401 || error.response.data.code === 'INVALID_TOKEN')) {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);

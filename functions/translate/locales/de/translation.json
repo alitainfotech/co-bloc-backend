@@ -5,11 +5,10 @@
     "PAYMENT_FETCH_DATA_FAILED": "Fehler beim Abrufen von Zahlungsdaten",
     "ORDER_FETCH_DATA_FAILED": "Fehler beim Abrufen von Bestelldaten",
     "INVOICE_FETCH_DATA_FAILED": "Fehler beim Abrufen von Rechnungsdaten",
-    
     "FAILED_CREATE_USER": "Fehler beim Erstellen des Benutzers in Zoho CRM",
     "FAILED_PAYMENT": "Fehler beim Erstellen der Zahlung in Zoho CRM",
     "FAILED_ORDER": "Fehler beim Erstellen der Bestellung in Zoho CRM",
     "FAILED_INVOICE": "Fehler beim Erstellen der Rechnung in Zoho CRM",
-    "FAILED_SUPPORT": "Fehler beim Erstellen des Supports in Zoho CRM"
+    "FAILED_SUPPORT": "Fehler beim Erstellen des Supports in Zoho CRM",
+    "ACCESS_TOKEN_ERROR": "Fehler beim Auffrischen des Zugriffstokens"
 }
-  

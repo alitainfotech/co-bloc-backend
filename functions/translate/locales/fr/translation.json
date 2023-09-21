@@ -10,5 +10,7 @@
   "FAILED_PAYMENT": "Échec de la création du paiement dans Zoho CRM.",
   "FAILED_ORDER": "Échec de la création de la commande dans Zoho CRM.",
   "FAILED_INVOICE": "Échec de la création de la facture dans Zoho CRM.",
-  "FAILED_SUPPORT": "Échec de la création du support dans Zoho CRM."
+  "FAILED_SUPPORT": "Échec de la création du support dans Zoho CRM.",
+
+  "ACCESS_TOKEN_ERROR":"Erreur lors de la mise à jour du jeton d'accès"
 }

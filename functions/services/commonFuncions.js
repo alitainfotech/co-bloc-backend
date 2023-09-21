@@ -27,7 +27,7 @@ const refreshAccessToken = async () => {
     const clientId = process.env.ZOHO_CLIENT_ID;
     const clientSecret = process.env.ZOHO_CLIENT_SECRET;
     const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
-    const refreshTokenURL = `${process.env.ZOHO_CRM_V2_URL}/token`;
+    const refreshTokenURL = `${process.env.REFRESH_TOKEN_URL}/token`;
 
     const data = {
         grant_type: 'refresh_token',
@@ -50,11 +50,11 @@ const refreshAccessToken = async () => {
             return bcryptToken
         } else {
             console.error('Error refreshing access token. Response:', responseData);
-            throw new Error('Error refreshing access token');
+            res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") })
         }
     } catch (error) {
         console.error('Error refreshing access token:', error);
-        throw new Error('Error refreshing access token');
+        res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") })
     }
 }
 
@@ -79,13 +79,11 @@ const CommonFunForCatch = async (url, method, decryptToken, requestData = null) 
                 if (getUserResponse.status === 200) {
                     return getUserResponse.data;
                 } else {
-                    throw new Error('Failed to fetch user data');
+                    res.status(500).json({ error: req.t("USER_FETCH_DATA_FAILED") })
                 }
             } else {
-                throw new Error('User added, but ID not found in response');
+                res.status(500).json({ error: req.t("FAILED_CREATE_USER") })
             }
-        } else {
-            throw new Error('Failed to create user in Zoho CRM');
         }
     } catch (error) {
         throw error;
