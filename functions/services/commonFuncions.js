@@ -27,7 +27,7 @@ const refreshAccessToken = async () => {
     const clientId = process.env.ZOHO_CLIENT_ID;
     const clientSecret = process.env.ZOHO_CLIENT_SECRET;
     const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
-    const refreshTokenURL = 'https://accounts.zoho.eu/oauth/v2/token';
+    const refreshTokenURL = `${process.env.ZOHO_CRM_V2_URL}/token`;
 
     const data = {
         grant_type: 'refresh_token',
