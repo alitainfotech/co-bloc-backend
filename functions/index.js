@@ -1,58 +1,28 @@
-const express = require("express");
-const functions = require("firebase-functions");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const Mailgun = require("mailgun.js");
-const formData = require("form-data");
-const fs = require("fs");
-const puppeteer = require("puppeteer");
-const ejs = require("ejs");
-const axios = require("axios");
-require("dotenv").config();
+const express = require('express')
+const functions = require('firebase-functions');
+const bodyParser = require('body-parser')
+const cors = require('cors')
+require("dotenv").config()
+const { middleware, i18next } = require('./helpers/i18next');
 
-const { onRequest } = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
-const path = require("path");
-const { log } = require("console");
-const {
-  addUser,
-  Pay,
-  Payment,
-  Order,
-  Invoice,
-  Support,
-  RefreshAccessToken,
-} = require("./Controller");
+const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken } = require('./Controller');
 
-const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+const app = express()
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }))
 app.use(
-  cors({
-    origin: "*",
-  })
+    cors({
+        origin: "*",
+    })
 );
+app.use(middleware.handle(i18next))
 
-app.post("/pay", async (req, res) => {
-  await Pay(req, res);
-});
-app.post("/addUser", async (req, res) => {
-  await addUser(req, res);
-});
-app.post("/Payment", async (req, res) => {
-  await Payment(req, res);
-});
-app.post("/Order", async (req, res) => {
-  await Order(req, res);
-});
-app.post("/Invoice", async (req, res) => {
-  await Invoice(req, res);
-});
-app.post("/Support", async (req, res) => {
-  await Support(req, res);
-});
-app.get("/Token", async (req, res) => {
-  await RefreshAccessToken(req, res);
-});
+app.post('/pay', Pay);
+app.post('/addUser', addUser);
+app.post('/Payment', Payment);
+app.post('/Order', Order);
+app.post('/Invoice', Invoice);
+app.post('/Support', Support);
+app.get('/Token', RefreshAccessToken);
 
-exports.app = functions.https.onRequest(app);
+exports.app = functions.https.onRequest(app)

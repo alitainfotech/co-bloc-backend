@@ -1,0 +1,14 @@
+{
+  "PAYMENT_ERROR": "Une erreur s'est produite lors du traitement de votre paiement.",
+  "CATCH_ERROR": "Une erreur s'est produite lors de l'interaction avec Zoho CRM.",
+  "USER_FETCH_DATA_FAILED": "Échec de la récupération des données de l'utilisateur.",
+  "PAYMENT_FETCH_DATA_FAILED": "Échec de la récupération des données de paiement.",
+  "ORDER_FETCH_DATA_FAILED": "Échec de la récupération des données de commande.",
+  "INVOICE_FETCH_DATA_FAILED": "Échec de la récupération des données de facture.",
+  
+  "FAILED_CREATE_USER": "Échec de la création de l'utilisateur dans Zoho CRM.",
+  "FAILED_PAYMENT": "Échec de la création du paiement dans Zoho CRM.",
+  "FAILED_ORDER": "Échec de la création de la commande dans Zoho CRM.",
+  "FAILED_INVOICE": "Échec de la création de la facture dans Zoho CRM.",
+  "FAILED_SUPPORT": "Échec de la création du support dans Zoho CRM."
+}

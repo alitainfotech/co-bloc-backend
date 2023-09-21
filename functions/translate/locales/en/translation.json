@@ -1,0 +1,15 @@
+{
+  "PAYMENT_ERROR":"An error occurred while processing your payment.",
+  "CATCH_ERROR": "An error occurred while interacting with Zoho CRM",
+
+  "USER_FETCH_DATA_FAILED":"Failed to fetch user data",
+  "PAYMENT_FETCH_DATA_FAILED":"Failed to fetch payment data",
+  "ORDER_FETCH_DATA_FAILED":"Failed to fetch Order data",
+  "INVOICE_FETCH_DATA_FAILED":"Failed to fetch Invoice data",
+  
+  "FAILED_CREATE_USER":"Failed to create user in Zoho CRM",
+  "FAILED_PAYMENT":"Failed to create payment in Zoho CRM",
+  "FAILED_ORDER":"Failed to create Order in Zoho CRM",
+  "FAILED_INVOICE":"Failed to create Invoice in Zoho CRM",
+  "FAILED_SUPPORT":"Failed to create Support in Zoho CRM"
+}
