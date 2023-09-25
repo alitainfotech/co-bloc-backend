@@ -8,7 +8,7 @@ const path = require('path');
 var CryptoJS = require("crypto-js");
 require("dotenv").config()
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
+const {STATUS_CODE, STATUS_ERROR} = require("./commonConstant");
 const {
     decryptAccessToken,
     getZohoHeaders,
@@ -85,9 +85,11 @@ exports.addUser = async (req, res) => {
         });
 
         if (checkUserResponse.status !== 200) {
-            const response = await axios.post(zohoApiBaseUrl, JSON.stringify(req.body), {
+
+            const response = await axios.post(zohoApiBaseUrl, removeTags(JSON.stringify(req.body)), {
                 headers: getZohoHeaders(decryptToken)
             });
+
             if (response.status === 200 || response.status === 201) {
                 const responseData = response.data;
                 if (responseData && responseData.data && responseData?.data[0].details.id) {
@@ -108,7 +110,11 @@ exports.addUser = async (req, res) => {
             return res.status(checkUserResponse.status).json(checkUserResponse.data);
         }
     } catch (error) {
-        if (error.response && (error.response.status === 401 || error.response.data.code === 'INVALID_TOKEN')) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
@@ -117,7 +123,7 @@ exports.addUser = async (req, res) => {
                     headers: getZohoHeaders(decryptToken)
                 });
                 if (checkUserResponse.status !== 200) {
-                    const responseData = await CommonFunForCatch(zohoApiBaseUrl, 'post', `${decryptToken}`, JSON.stringify(req.body));
+                    const responseData = await CommonFunForCatch(zohoApiBaseUrl, 'post', `${decryptToken}`, removeTags(JSON.stringify(req.body)));
                     return res.status(200).send(responseData);
                 } else {
                     return res.status(checkUserResponse.status).json(checkUserResponse.data);
@@ -132,7 +138,6 @@ exports.addUser = async (req, res) => {
 };
 
 
-
 exports.Payment = async (req, res) => {
 
     const zohoApiBaseUrlforPayment = `${process.env.ZOHO_CRM_V2_URL}/Payment`;
@@ -141,7 +146,7 @@ exports.Payment = async (req, res) => {
         const accessToken = req.headers.authorization.split(" ")[1];
         const decryptToken = decryptAccessToken(accessToken, process.env.SECRET_KEY);
 
-        const response = await axios.post(zohoApiBaseUrlforPayment, JSON.stringify(req.body), {
+        const response = await axios.post(zohoApiBaseUrlforPayment, removeTags(JSON.stringify(req.body)), {
             headers: getZohoHeaders(decryptToken)
         });
 
@@ -164,12 +169,16 @@ exports.Payment = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_PAYMENT") });
         }
     } catch (error) {
-        if (error.response && (error.response.status === 401 || error.response.data.code === 'INVALID_TOKEN')) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
-                const responseData = await CommonFunForCatch(zohoApiBaseUrlforPayment, 'post', `${decryptToken}`, JSON.stringify(req.body));
+                const responseData = await CommonFunForCatch(zohoApiBaseUrlforPayment, 'post', `${decryptToken}`, removeTags(JSON.stringify(req.body)));
                 return res.status(200).send(responseData);
             } catch (error) {
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
@@ -188,7 +197,7 @@ exports.Order = async (req, res) => {
         const accessToken = req.headers.authorization.split(" ")[1];
         const decryptToken = decryptAccessToken(accessToken, process.env.SECRET_KEY);
 
-        const response = await axios.post(zohoApiBaseUrlforOrder, JSON.stringify(req.body), {
+        const response = await axios.post(zohoApiBaseUrlforOrder, removeTags(JSON.stringify(req.body)), {
             headers: getZohoHeaders(decryptToken)
         });
         if (response.status === 200 || response.status === 201) {
@@ -210,13 +219,16 @@ exports.Order = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
         }
     } catch (error) {
-        console.log(error);
-        if (error.response && (error.response.status === 401 || error.response.data.code === 'INVALID_TOKEN')) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
-                const responseData = await CommonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, JSON.stringify(req.body));
+                const responseData = await CommonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, removeTags(JSON.stringify(req.body)));
                 return res.status(200).send(responseData);
             } catch (error) {
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
@@ -235,7 +247,7 @@ exports.Invoice = async (req, res) => {
         const accessToken = req.headers.authorization.split(" ")[1];
         const decryptToken = decryptAccessToken(accessToken, process.env.SECRET_KEY);
 
-        const response = await axios.post(zohoApiBaseUrlforInvoice, JSON.stringify(req.body), {
+        const response = await axios.post(zohoApiBaseUrlforInvoice, removeTags(JSON.stringify(req.body)), {
             headers: getZohoHeaders(decryptToken)
         });
         if (response.status === 200 || response.status === 201) {
@@ -326,12 +338,16 @@ exports.Invoice = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_INVOICE") });
         }
     } catch (error) {
-        if (error.response && (error.response.status === 401 || error.response.data.code === 'INVALID_TOKEN')) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
-                const responseData = await CommonFunForCatch(zohoApiBaseUrlforInvoice, 'post', `${decryptToken}`, JSON.stringify(req.body));
+                const responseData = await CommonFunForCatch(zohoApiBaseUrlforInvoice, 'post', `${decryptToken}`, removeTags(JSON.stringify(req.body)));
                 return res.status(200).send(responseData);
             } catch (error) {
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
@@ -341,8 +357,6 @@ exports.Invoice = async (req, res) => {
         }
     }
 };
-
-
 
 exports.Support = async (req, res) => {
 
@@ -360,7 +374,7 @@ exports.Support = async (req, res) => {
 
         req.body.data[0].Request_Type = [requestType];
 
-        const response = await axios.post(zohoApiBaseUrlForSupport, JSON.stringify(req.body), {
+        const response = await axios.post(zohoApiBaseUrlForSupport, removeTags(JSON.stringify(req.body)), {
             headers: getZohoHeaders(decryptToken)
         });
         if (response.status === 200 || response.status === 201) {
@@ -371,7 +385,11 @@ exports.Support = async (req, res) => {
         }
 
     } catch (error) {
-        if (error.response && (error.response.status === 401 || error.response.data.code === 'INVALID_TOKEN')) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
@@ -383,7 +401,7 @@ exports.Support = async (req, res) => {
             req.body.data[0].Request_Type = [requestType];
 
             try {
-                const responseData = await CommonFunForCatch(zohoApiBaseUrlForSupport, 'post', `${decryptToken}`, JSON.stringify(req.body));
+                const responseData = await CommonFunForCatch(zohoApiBaseUrlForSupport, 'post', `${decryptToken}`, removeTags(JSON.stringify(req.body)));
                 return res.status(200).json({ data: responseData, message: req.t("SUPPORT_MESSAGE") });
             } catch (error) {
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
@@ -398,4 +416,24 @@ exports.Support = async (req, res) => {
 function truncateToDecimals(num, dec = 2) {
     const calcDec = Math.pow(10, dec);
     return Math.trunc(num * calcDec) / calcDec;
-}   
+}
+
+var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+
+var tagOrComment = new RegExp(
+    '<(?:'
+    + '!--(?:(?:-*[^->])*--+|-?)'
+    + '|/?[a-z]'
+    + tagBody
+    + ')>',
+    'gi');
+
+function removeTags(html) {
+    var oldHtml;
+    do {
+        oldHtml = html;
+        html = html.replace(tagOrComment, '');
+        html = html.replace(/alert\('(.+?)'\)/g, '$1');
+    } while (html !== oldHtml);
+    return html.replace(/</g, '&lt;');
+};

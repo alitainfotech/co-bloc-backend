@@ -12,7 +12,7 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(
     cors({
-        origin: "*",
+        origin: "http://alitadesk.alitainfotech.com:81/Js/co-bloc/index.html",
     })
 );
 app.use(middleware.handle(i18next))
