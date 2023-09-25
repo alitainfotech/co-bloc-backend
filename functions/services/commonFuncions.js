@@ -90,9 +90,32 @@ const CommonFunForCatch = async (url, method, decryptToken, requestData = null) 
     }
 }
 
+// Cross-Site Scripting solutions
+
+var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+
+var tagOrComment = new RegExp(
+    '<(?:'
+    + '!--(?:(?:-*[^->])*--+|-?)'
+    + '|/?[a-z]'
+    + tagBody
+    + ')>',
+    'gi');
+
+const removeTags = (html) => {
+    var oldHtml;
+    do {
+        oldHtml = html;
+        html = html.replace(tagOrComment, '');
+        html = html.replace(/alert\('(.+?)'\)/g, '$1');
+    } while (html !== oldHtml);
+    return html.replace(/</g, '&lt;');
+};
+
 module.exports = {
     decryptAccessToken,
     getZohoHeaders,
     refreshAccessToken,
-    CommonFunForCatch
+    CommonFunForCatch,
+    removeTags
 }
