@@ -13,7 +13,8 @@ const {
     decryptAccessToken,
     getZohoHeaders,
     refreshAccessToken,
-    CommonFunForCatch
+    CommonFunForCatch,
+    removeTags
 } = require('./services/commonFuncions');
 
 
@@ -417,23 +418,3 @@ function truncateToDecimals(num, dec = 2) {
     const calcDec = Math.pow(10, dec);
     return Math.trunc(num * calcDec) / calcDec;
 }
-
-var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
-
-var tagOrComment = new RegExp(
-    '<(?:'
-    + '!--(?:(?:-*[^->])*--+|-?)'
-    + '|/?[a-z]'
-    + tagBody
-    + ')>',
-    'gi');
-
-function removeTags(html) {
-    var oldHtml;
-    do {
-        oldHtml = html;
-        html = html.replace(tagOrComment, '');
-        html = html.replace(/alert\('(.+?)'\)/g, '$1');
-    } while (html !== oldHtml);
-    return html.replace(/</g, '&lt;');
-};
