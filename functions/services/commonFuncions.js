@@ -111,7 +111,6 @@ const removeTags = (html) => {
     } while (html !== oldHtml);
     return html.replace(/</g, '&lt;');
 };
-// removeTags()
 
 module.exports = {
     decryptAccessToken,
