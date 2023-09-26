@@ -5,13 +5,13 @@ const cors = require('cors')
 require("dotenv").config()
 const { middleware, i18next } = require('./helpers/i18next');
 
-const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken } = require('./Controller');
+const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, checkOrderId } = require('./Controller');
 
 const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(
-    cors({origin: process.env.BASE_URL})
+    cors({ origin: process.env.BASE_URL })
 );
 app.use(middleware.handle(i18next))
 
@@ -22,5 +22,6 @@ app.post('/Order', Order);
 app.post('/Invoice', Invoice);
 app.post('/Support', Support);
 app.get('/Token', RefreshAccessToken);
+app.post('/CheckOrderId', checkOrderId);
 
 exports.app = functions.https.onRequest(app)
