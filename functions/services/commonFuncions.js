@@ -1,11 +1,21 @@
 var CryptoJS = require("crypto-js");
 const axios = require("axios");
+const { REFRESH_TOKEN } = require("../commonConstant");
 require("dotenv").config()
 
 
+// this function is to truncate the additional decimal points
+const truncateToDecimals = (num, dec = 2) => {
+    const calcDec = Math.pow(10, dec);
+    return Math.trunc(num * calcDec) / calcDec;
+}
+
+
 // for Decrypt token to Access token
-const decryptAccessToken = (accessToken, secretKey) => {
+const decryptAccessToken = (data, secretKey) => {
     try {
+        let accessToken = (data && data.headers) ?  data.headers.authorization.split(" ")[1] : data;
+       
         const bytes = CryptoJS.AES.decrypt(accessToken, secretKey);
         const decryptToken = bytes.toString(CryptoJS.enc.Utf8);
         return decryptToken;
@@ -30,7 +40,7 @@ const refreshAccessToken = async () => {
     const refreshTokenURL = `${process.env.REFRESH_TOKEN_URL}/token`;
 
     const data = {
-        grant_type: 'refresh_token',
+        grant_type: REFRESH_TOKEN,
         client_id: clientId,
         client_secret: clientSecret,
         refresh_token: refreshToken,
@@ -59,7 +69,7 @@ const refreshAccessToken = async () => {
 }
 
 // for Common functions for catch
-const CommonFunForCatch = async (url, method, decryptToken, requestData = null) => {
+const commonFunForCatch = async (url, method, decryptToken, requestData = null) => {
 
     const headers = {
         'Authorization': `Zoho-oauthtoken ${decryptToken}`,
@@ -92,18 +102,21 @@ const CommonFunForCatch = async (url, method, decryptToken, requestData = null) 
 
 // Cross-Site Scripting solutions
 
-var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
 
-var tagOrComment = new RegExp(
-    '<(?:'
-    + '!--(?:(?:-*[^->])*--+|-?)'
-    + '|/?[a-z]'
-    + tagBody
-    + ')>',
-    'gi');
 
-const removeTags = (html) => {
+const sanitizeHtml = (html) => {
+    var tagBody = '(?:[^"\'>]|"[^"]*"|\'[^\']*\')*';
+
+    var tagOrComment = new RegExp(
+        '<(?:'
+        + '!--(?:(?:-*[^->])*--+|-?)'
+        + '|/?[a-z]'
+        + tagBody
+        + ')>',
+        'gi');
+
     var oldHtml;
+
     do {
         oldHtml = html;
         html = html.replace(tagOrComment, '');
@@ -116,6 +129,7 @@ module.exports = {
     decryptAccessToken,
     getZohoHeaders,
     refreshAccessToken,
-    CommonFunForCatch,
-    removeTags
+    commonFunForCatch,
+    sanitizeHtml,
+    truncateToDecimals
 }

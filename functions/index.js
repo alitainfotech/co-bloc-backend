@@ -11,7 +11,7 @@ const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(
-    cors({origin: "http://alitadesk.alitainfotech.com:81/js/co-bloc/"})
+    cors({origin: process.env.BASE_URL})
 );
 app.use(middleware.handle(i18next))
 
