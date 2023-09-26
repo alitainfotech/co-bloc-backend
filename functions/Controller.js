@@ -11,8 +11,6 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const {
     STATUS_CODE,
     STATUS_ERROR,
-    // COMMENT,
-    // NEW_TICKET,
     SUPPORT_REQUEST,
     REFRESH_TOKEN
 } = require("./commonConstant");
