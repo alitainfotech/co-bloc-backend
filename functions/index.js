@@ -10,9 +10,8 @@ const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, chec
 const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
-app.use(
-    app.use(cors({ origin: [process.env.BASE_URL, process.env.TEST_BASE_URL] }))
-)
+app.use(cors({ origin: [process.env.BASE_URL, process.env.TEST_BASE_URL] }))
+
 app.use(middleware.handle(i18next))
 
 app.post('/pay', Pay);
