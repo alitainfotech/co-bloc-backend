@@ -393,7 +393,7 @@ exports.Support = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
                 headers: getZohoHeaders(decryptToken)
@@ -414,25 +414,44 @@ exports.Support = async (req, res) => {
     }
 };
 
+
 exports.checkOrderId = async (req, res) => {
 
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
 
     try {
-        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+        let decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
 
-        const { order_id } = req.body;
-
-        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${order_id})`, {
+        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
             headers: getZohoHeaders(decryptToken)
         });
-
         if (checkUserResponse.status === 200) {
-            return res.json({ status: 200, data: checkUserResponse.data });
-        } else {
+            return res.json({ status: 200, data: { Order_Id: checkUserResponse?.data?.data[0].Order_Id } });
+        }
+        else {
             return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
         }
+
     } catch (error) {
-        return res.status(500).json({ error: req.t("CATCH_ERROR") });
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
+                headers: getZohoHeaders(decryptToken)
+            });
+
+            if (checkUserResponse.status === 200 || checkUserResponse.status === 201) {
+                return res.json({ status: 200, data: checkUserResponse?.data?.data[0].Order_Id });
+            } else {
+                return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
+            }
+        } else {
+        }
+        return res.status(500).json({ message: req.t("CATCH_ERROR") });
     }
-}
+};

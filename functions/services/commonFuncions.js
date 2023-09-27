@@ -15,9 +15,8 @@ const truncateToDecimals = (num, dec = 2) => {
 const decryptAccessToken = (data, secretKey) => {
     try {
         let accessToken = (data && data.headers) ?  data.headers.authorization.split(" ")[1] : data;
-       
-        const bytes = CryptoJS.AES.decrypt(accessToken, secretKey);
-        const decryptToken = bytes.toString(CryptoJS.enc.Utf8);
+        let bytes = CryptoJS.AES.decrypt(accessToken, secretKey);
+        let decryptToken = bytes.toString(CryptoJS.enc.Utf8);
         return decryptToken;
     } catch (error) {
         throw new Error('Failed to decrypt access token');
