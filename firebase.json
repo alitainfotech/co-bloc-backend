@@ -12,40 +12,12 @@
     }
   ],
   "emulators": {
-    "hosting": {
-      "port": 5000,
-      "host": "0.0.0.0"
-    },
-    "auth": {
-      "port": 9099
-    },
     "functions": {
-      "port": 5001,
-      "host": "0.0.0.0"
-    },
-    "firestore": {
-      "port": 8080
-    },
-    "pubsub": {
-      "port": 8085
+      "port": 5001
     },
     "ui": {
       "enabled": true
     },
     "singleProjectMode": true
-  },
-  "hosting": {
-    "public": "y",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
   }
 }

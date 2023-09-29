@@ -1,545 +1,457 @@
-const express = require("express");
-const functions = require("firebase-functions");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const Mailgun = require("mailgun.js");
-const formData = require("form-data");
-const fs = require("fs");
+const Mailgun = require('mailgun.js');
+const formData = require('form-data');
+const fs = require('fs');
 const puppeteer = require("puppeteer");
-const ejs = require("ejs");
+const ejs = require("ejs")
 const axios = require("axios");
-require("dotenv").config();
+const path = require('path');
+var CryptoJS = require("crypto-js");
+require("dotenv").config()
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const {
+    STATUS_CODE,
+    STATUS_ERROR,
+    SUPPORT_REQUEST,
+    REFRESH_TOKEN
+} = require("./commonConstant");
+const {
+    decryptAccessToken,
+    getZohoHeaders,
+    refreshAccessToken,
+    commonFunForCatch,
+    truncateToDecimals,
+    sanitizeHtml
+} = require('./services/commonFuncions');
 
-const { onRequest } = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
-const path = require("path");
-const { log } = require("console");
 
-const app = express();
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(
-  cors({
-    origin: "*",
-  })
-);
 
-let globalAccessToken = null;
+exports.RefreshAccessToken = async (req, res) => {
+    const clientId = process.env.ZOHO_CLIENT_ID;
+    const clientSecret = process.env.ZOHO_CLIENT_SECRET;
+    const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
+    const refreshTokenURL = `${process.env.REFRESH_TOKEN_URL}/token`;
+    const grantType = REFRESH_TOKEN
 
-async function refreshAccessToken() {
-  const clientId = process.env.ZOHO_CLIENT_ID;
-  const clientSecret = process.env.ZOHO_CLIENT_SECRET;
-  const refreshToken = process.env.ZOHO_REFRESH_TOKEN;
-  const refreshTokenURL = "https://accounts.zoho.eu/oauth/v2/token";
+    const data = {
+        grant_type: grantType,
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: refreshToken,
+    };
 
-  const data = {
-    grant_type: "refresh_token",
-    client_id: clientId,
-    client_secret: clientSecret,
-    refresh_token: refreshToken,
-  };
+    try {
+        const response = await axios.post(refreshTokenURL, null, {
+            params: data,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+        const responseData = response.data;
 
-  try {
-    const response = await axios.post(refreshTokenURL, null, {
-      params: data,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    const responseData = response.data;
-    if (responseData.access_token) {
-      const accessToken = responseData.access_token;
-      globalAccessToken = accessToken;
-      return globalAccessToken;
-    } else {
-      console.error("Error refreshing access token. Response:", responseData);
-      throw new Error("Error refreshing access token");
-    }
-  } catch (error) {
-    console.error("Error refreshing access token:", error);
-    throw new Error("Error refreshing access token");
-  }
-}
-
-async function CommonFunForCatch(url, method, accessToken, requestData = null) {
-  const headers = {
-    Authorization: accessToken,
-    "Content-Type": "application/json",
-  };
-
-  try {
-    const response = await axios({ url, method, headers, data: requestData });
-
-    if (response.status === 200 || response.status === 201) {
-      const responseData = response.data;
-      if (
-        responseData &&
-        responseData.data &&
-        responseData.data[0].details.id
-      ) {
-        const userId = responseData.data[0].details.id;
-        const getUserUrl = `${url}/${userId}`;
-        const getUserResponse = await axios.get(getUserUrl, { headers });
-
-        if (getUserResponse.status === 200) {
-          return getUserResponse.data;
+        if (responseData.access_token) {
+            const accessToken = responseData.access_token;
+            let bcryptToken = CryptoJS.AES.encrypt(accessToken, process.env.SECRET_KEY).toString();
+            return res.json({ accessToken: bcryptToken });
         } else {
-          throw new Error("Failed to fetch user data");
+            console.error('Error refreshing access token. Response:', responseData);
+            res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") });
         }
-      } else {
-        throw new Error("User added, but ID not found in response");
-      }
-    } else if (
-      response.status === 401 &&
-      response.data.code === "INVALID_TOKEN"
-    ) {
-      throw new Error("Invalid token");
-    } else {
-      throw new Error("Failed to create user in Zoho CRM");
+    } catch (error) {
+        console.error('Error refreshing access token:', error);
+        res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") });
     }
-  } catch (error) {
-    throw error;
-  }
 }
 
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 exports.Pay = async (req, res) => {
-  try {
-    const { amount, currency } = req.body;
-    const convertedAmount = currency === "INR" ? amount * 100 : amount;
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: convertedAmount,
-      currency: currency,
-    });
-    res.send({ clientSecret: paymentIntent.client_secret });
-  } catch (error) {
-    return res
-      .status(500)
-      .send({ error: "An error occurred while processing your payment." });
-  }
+    try {
+        const { amount, currency } = req.body;
+        const convertedAmount = truncateToDecimals(amount) * 100; // Currency is EURO for now but we need to convert the amount into multiple of 100 despite of any currency...
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: convertedAmount,
+            currency: currency,
+        });
+        res.send({ clientSecret: paymentIntent.client_secret });
+    } catch (error) {
+        return res
+            .status(500)
+            .send({ error: req.t("PAYMENT_ERROR") });
+    }
 };
 
-const zohoApiBaseUrl = "https://www.zohoapis.eu/crm/v2/Customer";
 
 exports.addUser = async (req, res) => {
-  try {
-    const accessToken = req.headers.authorization;
 
-    const response = await axios.post(
-      zohoApiBaseUrl,
-      JSON.stringify(req.body),
-      {
-        headers: {
-          Authorization: accessToken,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
 
-    console.log("response.data======>>>", response.data);
-    if (response.status === 200 || response.status === 201) {
-      const responseData = response.data;
-      if (
-        responseData &&
-        responseData.data &&
-        responseData.data[0].details.id
-      ) {
-        const userId = responseData.data[0].details.id;
-        const getUserUrl = `${zohoApiBaseUrl}/${userId}`;
-        const getUserResponse = await axios.get(getUserUrl, {
-          headers: {
-            Authorization: accessToken,
-            "Content-Type": "application/json",
-          },
+    try {
+        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
+            headers: getZohoHeaders(decryptToken)
         });
 
-        if (getUserResponse.status === 200) {
-          res.status(getUserResponse.status).send(getUserResponse.data);
-        } else {
-          res
-            .status(getUserResponse.status)
-            .json({ message: "Failed to fetch user data" });
-        }
-        console.log(getUserResponse.data);
-      } else {
-        res
-          .status(response.status)
-          .json({ message: "User added, but ID not found in response" });
-      }
-    } else if (
-      response.status === 401 &&
-      response.data.code === "INVALID_TOKEN"
-    ) {
-      throw response;
-    } else {
-      res
-        .status(response.status)
-        .json({ message: "Failed to create user in Zoho CRM" });
-    }
-  } catch (error) {
-    if (
-      error.response.status === 401 &&
-      error.response.data.code === "INVALID_TOKEN"
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      try {
-        const responseData = await CommonFunForCatch(
-          zohoApiBaseUrl,
-          "post",
-          `Zoho-oauthtoken ${globalAccessToken}`,
-          JSON.stringify(req.body)
-        );
-        res.status(200).send(responseData);
-      } catch (error) {
-        res.status(500).json({
-          message: "An error occurred while interacting with Zoho CRM",
-        });
-      }
-    } else {
-      res
-        .status(500)
-        .json({ message: "An error occurred while interacting with Zoho CRM" });
-    }
-  }
-};
+        if (checkUserResponse.status !== 200) {
 
-const zohoApiBaseUrlforPayment = "https://www.zohoapis.eu/crm/v2/Payment";
-
-exports.Payment = async (req, res) => {
-  try {
-    const accessToken = req.headers.authorization;
-
-    const response = await axios.post(
-      zohoApiBaseUrlforPayment,
-      JSON.stringify(req.body),
-      {
-        headers: {
-          Authorization: accessToken,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.status === 200 || response.status === 201) {
-      const responseData = response.data;
-      if (
-        responseData &&
-        responseData.data &&
-        responseData.data[0].details.id
-      ) {
-        const userId = responseData.data[0].details.id;
-        const getUserUrl = `${zohoApiBaseUrlforPayment}/${userId}`;
-        const getUserResponse = await axios.get(getUserUrl, {
-          headers: {
-            Authorization: accessToken,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (getUserResponse.status === 200) {
-          res.status(getUserResponse.status).send(getUserResponse.data);
-        } else {
-          res
-            .status(getUserResponse.status)
-            .json({ message: "Failed to fetch user data" });
-        }
-      } else {
-        res
-          .status(response.status)
-          .json({ message: "User added, but ID not found in response" });
-      }
-    } else {
-      res
-        .status(response.status)
-        .json({ message: "Failed to create user in Zoho CRM" });
-    }
-  } catch (error) {
-    if (
-      error.response &&
-      error.response.status === 401 &&
-      error.response.data.code === "INVALID_TOKEN"
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      try {
-        const responseData = await CommonFunForCatch(
-          zohoApiBaseUrlforPayment,
-          "post",
-          `Zoho-oauthtoken ${globalAccessToken}`,
-          JSON.stringify(req.body)
-        );
-        res.status(200).send(responseData);
-      } catch (error) {
-        res.status(500).json({
-          message: "An error occurred while interacting with Zoho CRM",
-        });
-      }
-    } else {
-      res
-        .status(500)
-        .json({ message: "An error occurred while interacting with Zoho CRM" });
-    }
-  }
-};
-
-const zohoApiBaseUrlforOrder = "https://www.zohoapis.eu/crm/v5/Sales_Orders";
-
-exports.Order = async (req, res) => {
-  try {
-    const accessToken = req.headers.authorization;
-
-    const response = await axios.post(
-      zohoApiBaseUrlforOrder,
-      JSON.stringify(req.body),
-      {
-        headers: {
-          Authorization: accessToken,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    console.log(response.data);
-    if (response.status === 200 || response.status === 201) {
-      const responseData = response.data;
-      if (
-        responseData &&
-        responseData.data &&
-        responseData.data[0].details.id
-      ) {
-        const userId = responseData.data[0].details.id;
-        const getUserUrl = `${zohoApiBaseUrlforOrder}/${userId}`;
-        const getUserResponse = await axios.get(getUserUrl, {
-          headers: {
-            Authorization: accessToken,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (getUserResponse.status === 200) {
-          res.status(getUserResponse.status).send(getUserResponse.data);
-        } else {
-          res
-            .status(getUserResponse.status)
-            .json({ message: "Failed to fetch user data" });
-        }
-      } else {
-        res
-          .status(response.status)
-          .json({ message: "User added, but ID not found in response" });
-      }
-    } else {
-      res
-        .status(response.status)
-        .json({ message: "Failed to create user in Zoho CRM" });
-    }
-  } catch (error) {
-    if (
-      error.response.status === 401 &&
-      error.response.data.code === "INVALID_TOKEN"
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      try {
-        const responseData = await CommonFunForCatch(
-          zohoApiBaseUrlforOrder,
-          "post",
-          `Zoho-oauthtoken ${globalAccessToken}`,
-          JSON.stringify(req.body)
-        );
-        res.status(200).send(responseData);
-      } catch (error) {
-        res.status(500).json({
-          message: "An error occurred while interacting with Zoho CRM",
-        });
-      }
-    } else {
-      res
-        .status(500)
-        .json({ message: "An error occurred while interacting with Zoho CRM" });
-    }
-  }
-};
-
-const zohoApiBaseUrlforInvoice = "https://www.zohoapis.eu/crm/v5/Invoices";
-
-exports.Invoice = async (req, res) => {
-  try {
-    const accessToken = req.headers.authorization;
-    const response = await axios.post(
-      zohoApiBaseUrlforInvoice,
-      JSON.stringify(req.body),
-      {
-        headers: {
-          Authorization: accessToken,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    if (response.status === 200 || response.status === 201) {
-      const responseData = response.data;
-
-      if (
-        responseData &&
-        responseData.data &&
-        responseData.data[0].details.id
-      ) {
-        const userId = responseData.data[0].details.id;
-        const getUserUrl = `${zohoApiBaseUrlforInvoice}/${userId}`;
-        const getUserResponse = await axios.get(getUserUrl, {
-          headers: {
-            Authorization: accessToken,
-            "Content-Type": "application/json",
-          },
-        });
-        if (getUserResponse.status === 200) {
-          const userResponseData = getUserResponse.data;
-          const invoiceData = userResponseData.data[0];
-
-          const mailgun = new Mailgun(formData);
-          const client = mailgun.client({
-            username: "api",
-            key: process.env.API_KEY,
-          });
-
-          const ejsTemplatePath = path.join(__dirname, "./invoice.ejs");
-          const templateContent = fs.readFileSync(ejsTemplatePath, "utf8");
-          const renderedHtml = ejs.render(templateContent, {
-            Invoices: {
-              CustomerName: invoiceData.First_Name.name,
-              InvoiceDate: invoiceData.Invoice_Date,
-              InvoiceNumber: invoiceData.Invoice_Number,
-              BillingStreet: invoiceData.Billing_Street,
-              BillingCity: invoiceData.Billing_City,
-              BillingProvince: invoiceData.Billing_State,
-              BillingCountry: invoiceData.Billing_Country,
-              BillingCode: invoiceData.Billing_Code,
-              Status: invoiceData.Status,
-              ProductName: invoiceData.Invoiced_Items[0].Product_Name.name,
-              Quantity: invoiceData.Invoiced_Items[0].Quantity,
-              ListPrice: invoiceData.Invoiced_Items[0].List_Price,
-              Amount: invoiceData.Invoiced_Items[0].Total,
-              SubTotal: invoiceData.Sub_Total,
-              GrandTotal: invoiceData.Grand_Total,
-            },
-          });
-          const browser = await puppeteer.launch();
-          const page = await browser.newPage();
-          await page.setContent(renderedHtml);
-          const pdfBuffer = await page.pdf();
-          await browser.close();
-
-          const messageData = {
-            from: "Excited User <yaman@sandbox9c68f09718d943bf94c0d68423461948.mailgun.org>",
-            to: invoiceData.Customer_Email,
-            subject: "Invoice PDF",
-            text: "Please find the PDF attachment.",
-            attachment: [
-              {
-                data: pdfBuffer,
-                filename: `${invoiceData.Invoice_Number}.pdf`,
-              },
-            ],
-          };
-
-          client.messages
-            .create(process.env.DOMAIN, messageData)
-            .then((response) => {
-              console.log("Email sent successfully:", response);
-              res.status(200).send("Email sent successfully");
-            })
-            .catch((err) => {
-              res.status(500).send("Error sending email");
+            const response = await axios.post(zohoApiBaseUrl, sanitizeHtml(JSON.stringify(req.body)), {
+                headers: getZohoHeaders(decryptToken)
             });
 
-          res.status(getUserResponse.status).send(getUserResponse.data);
+            if (response.status === 200 || response.status === 201) {
+                const responseData = response.data;
+                if (responseData && responseData.data && responseData?.data[0].details.id) {
+                    const userId = responseData.data[0].details.id;
+                    const getUserUrl = `${zohoApiBaseUrl}/${userId}`;
+                    const getUserResponse = await axios.get(getUserUrl, {
+                        headers: getZohoHeaders(decryptToken)
+                    });
+
+                    if (getUserResponse.status === 200) {
+                        return res.status(getUserResponse.status).send(getUserResponse.data);
+                    }
+                }
+            } else {
+                return res.status(response.status).json({ message: req.t("FAILED_CREATE_USER") });
+            }
         } else {
-          res
-            .status(getUserResponse.status)
-            .json({ message: "Failed to fetch user data" });
+            return res.status(checkUserResponse.status).json(checkUserResponse.data);
         }
-      } else {
-        res
-          .status(response.status)
-          .json({ message: "User added, but ID not found in response" });
-      }
-    } else {
-      res
-        .status(response.status)
-        .json({ message: "Failed to create user in Zoho CRM" });
+    } catch (error) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            try {
+                const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
+                    headers: getZohoHeaders(decryptToken)
+                });
+                if (checkUserResponse.status !== 200) {
+                    const responseData = await commonFunForCatch(zohoApiBaseUrl, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
+                    return res.status(200).send(responseData);
+                } else {
+                    return res.status(checkUserResponse.status).json(checkUserResponse.data);
+                }
+            } catch (error) {
+                return res.status(500).json({ message: req.t("CATCH_ERROR") });
+            }
+        } else {
+            return res.status(500).json({ message: req.t("CATCH_ERROR") });
+        }
     }
-  } catch (error) {
-    if (
-      error.response.status === 401 &&
-      error.response.data.code === "INVALID_TOKEN"
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      try {
-        const responseData = await CommonFunForCatch(
-          zohoApiBaseUrlforInvoice,
-          "post",
-          `Zoho-oauthtoken ${globalAccessToken}`,
-          JSON.stringify(req.body)
-        );
-        res.status(200).send(responseData);
-      } catch (error) {
-        res.status(500).json({
-          message: "An error occurred while interacting with Zoho CRM",
-        });
-      }
-    } else {
-      res
-        .status(500)
-        .json({ message: "An error occurred while interacting with Zoho CRM" });
-    }
-  }
 };
 
-const zohoApiBaseUrlForSupport = "https://www.zohoapis.eu/crm/v5/Support";
+
+exports.Payment = async (req, res) => {
+
+    const zohoApiBaseUrlforPayment = `${process.env.ZOHO_CRM_V2_URL}/Payment`;
+
+    try {
+        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const response = await axios.post(zohoApiBaseUrlforPayment, sanitizeHtml(JSON.stringify(req.body)), {
+            headers: getZohoHeaders(decryptToken)
+        });
+        if (response.status === 200 || response.status === 201) {
+            const responseData = response.data;
+            if (responseData && responseData.data && responseData.data[0].details.id) {
+                const userId = responseData.data[0].details.id;
+                const getUserUrl = `${zohoApiBaseUrlforPayment}/${userId}`;
+                const getUserResponse = await axios.get(getUserUrl, {
+                    headers: getZohoHeaders(decryptToken)
+                });
+
+                if (getUserResponse.status === 200) {
+                    return res.status(getUserResponse.status).send(getUserResponse.data);
+                } else {
+                    return res.status(getUserResponse.status).json({ message: req.t("PAYMENT_FETCH_DATA_FAILED") });
+                }
+            }
+        } else {
+            return res.status(response.status).json({ message: req.t("FAILED_PAYMENT") });
+        }
+    } catch (error) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            try {
+                const responseData = await commonFunForCatch(zohoApiBaseUrlforPayment, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
+                return res.status(200).send(responseData);
+            } catch (error) {
+                return res.status(500).json({ message: req.t("CATCH_ERROR") });
+            }
+        } else {
+            return res.status(500).json({ message: req.t("CATCH_ERROR") });
+        }
+    }
+};
+
+exports.Order = async (req, res) => {
+
+    const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
+
+    try {
+        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const response = await axios.post(zohoApiBaseUrlforOrder, sanitizeHtml(JSON.stringify(req.body)), {
+            headers: getZohoHeaders(decryptToken)
+        });
+        if (response.status === 200 || response.status === 201) {
+            const responseData = response.data;
+            if (responseData && responseData.data && responseData.data[0].details.id) {
+                const userId = responseData.data[0].details.id;
+                const getUserUrl = `${zohoApiBaseUrlforOrder}/${userId}`;
+                const getUserResponse = await axios.get(getUserUrl, {
+                    headers: getZohoHeaders(decryptToken)
+                });
+
+                if (getUserResponse.status === 200) {
+                    return res.status(getUserResponse.status).send(getUserResponse.data);
+                } else {
+                    return res.status(getUserResponse.status).json({ message: req.t("ORDER_FETCH_DATA_FAILED") });
+                }
+            }
+        } else {
+            return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
+        }
+    } catch (error) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            try {
+                const responseData = await commonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
+                return res.status(200).send(responseData);
+            } catch (error) {
+                return res.status(500).json({ message: req.t("CATCH_ERROR") });
+            }
+        } else {
+            return res.status(500).json({ message: req.t("CATCH_ERROR") });
+        }
+    }
+};
+
+exports.Invoice = async (req, res) => {
+
+    const zohoApiBaseUrlforInvoice = `${process.env.ZOHO_CRM_V5_URL}/Invoices`;
+
+    try {
+        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const response = await axios.post(zohoApiBaseUrlforInvoice, sanitizeHtml(JSON.stringify(req.body)), {
+            headers: getZohoHeaders(decryptToken)
+        });
+        if (response.status === 200 || response.status === 201) {
+            const responseData = response.data;
+            if (responseData && responseData.data && responseData.data[0].details.id) {
+                const userId = responseData.data[0].details.id;
+                const getUserUrl = `${zohoApiBaseUrlforInvoice}/${userId}`;
+                const getUserResponse = await axios.get(getUserUrl, {
+                    headers: getZohoHeaders(decryptToken)
+                });
+                if (getUserResponse.status === 200 || getUserResponse.status === 201) {
+
+                    const userResponseData = getUserResponse.data;
+                    const invoiceData = userResponseData.data[0];
+                    const mailgun = new Mailgun(formData);
+                    const client = mailgun.client({
+                        username: process.env.MAILGUN_USERNAME,
+                        key: process.env.API_KEY,
+                        url: process.env.MAILGUN_URL
+                    });
+                    const ejsTemplatePath = path.join(__dirname, "./pdfIndex.ejs");
+                    const templateContent = fs.readFileSync(ejsTemplatePath, "utf8");
+                    const renderedHtml = ejs.render(templateContent, {
+                        Invoices: {
+                            CustomerName: invoiceData.First_Name.name,
+                            LastName: invoiceData.Last_Name,
+                            InvoiceDate: invoiceData.Invoice_Date,
+                            InvoiceNumber: invoiceData.Invoice_Number,
+                            BillingStreet: invoiceData.Billing_Street,
+                            BillingCity: invoiceData.Billing_City,
+                            BillingProvince: invoiceData.Billing_State,
+                            BillingCountry: invoiceData.Billing_Country,
+                            BillingCode: invoiceData.Billing_Code,
+                            Status: invoiceData.Status,
+                            ProductName: invoiceData.Invoiced_Items[0].Product_Name.name,
+                            Quantity: invoiceData.Invoiced_Items[0].Quantity,
+                            Tax: invoiceData.Invoiced_Items[0].Tax,
+                            ListPrice: invoiceData.Invoiced_Items[0].List_Price,
+                            Price: invoiceData.Invoiced_Items[0].Total,
+                            Amount: invoiceData.Invoiced_Items[0].List_Price,
+                            SubTotal: invoiceData.Sub_Total,
+                            GrandTotal: invoiceData.Grand_Total
+                        }
+                    });
+                    const browser = await puppeteer.launch({ headless: "new" });
+                    const page = await browser.newPage();
+                    await page.setContent(renderedHtml);
+                    const pdfBuffer = await page.pdf();
+                    await browser.close();
+
+                    const htmlTemplatePath = path.join(__dirname, "./pdfIndextext.ejs");
+                    const htmltemplateContent = fs.readFileSync(htmlTemplatePath, "utf8");
+                    const html = ejs.render(htmltemplateContent, {
+                        Invoices: {
+                            CustomerName: invoiceData.First_Name.name,
+                            LastName: invoiceData.Last_Name,
+                            Amount: invoiceData.Invoiced_Items[0].Total,
+                        }
+                    })
+
+                    const messageData = {
+                        from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
+                        to: invoiceData?.Customer_Email,
+                        subject: `New Invoice from Co-Bloc #${invoiceData.Invoice_Number}`,
+                        html: html,
+                        attachment: [
+                            {
+                                data: pdfBuffer,
+                                filename: `${invoiceData?.Invoice_Number}.pdf`,
+                            },
+                        ],
+                    };
+
+                    client.messages.create(process.env.DOMAIN, messageData)
+                        .then((response) => {
+                            console.log('Email sent successfully:', response);
+                            return res.status(getUserResponse.status).send(getUserResponse.data);
+                        })
+                        .catch((err) => {
+                            console.log('Error sending email', err);
+                            return res.status(getUserResponse.status).send(getUserResponse.data);
+                        })
+                } else {
+                    return res.status(getUserResponse.status).json({ message: req.t("INVOICE_FETCH_DATA_FAILED") });
+                }
+            }
+        } else {
+            return res.status(response.status).json({ message: req.t("FAILED_INVOICE") });
+        }
+    } catch (error) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            try {
+                const responseData = await commonFunForCatch(zohoApiBaseUrlforInvoice, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
+                return res.status(200).send(responseData);
+            } catch (error) {
+                return res.status(500).json({ message: req.t("CATCH_ERROR") });
+            }
+        } else {
+            return res.status(500).json({ message: req.t("CATCH_ERROR") });
+        }
+    }
+};
 
 exports.Support = async (req, res) => {
-  try {
-    const accessToken = req.headers.authorization;
 
-    const response = await axios.post(
-      zohoApiBaseUrlForSupport,
-      JSON.stringify(req.body),
-      {
-        headers: {
-          Authorization: accessToken,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const zohoApiBaseUrlForSupport = `${process.env.ZOHO_CRM_V5_URL}/Support`;
+    const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
 
-    if (response.status === 200 || response.status === 201) {
-      res.status(response.status).send(response.data);
-    } else {
-      res
-        .status(response.status)
-        .json({ message: "Failed to create support in Zoho CRM" });
-    }
-  } catch (error) {
-    if (
-      error.response.status === 401 &&
-      error.response.data.code === "INVALID_TOKEN"
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      try {
-        const responseData = await CommonFunForCatch(
-          zohoApiBaseUrlForSupport,
-          "post",
-          `Zoho-oauthtoken ${globalAccessToken}`,
-          JSON.stringify(req.body)
-        );
-        res.status(200).send(responseData);
-      } catch (error) {
-        res.status(500).json({
-          message: "An error occurred while interacting with Zoho CRM",
+    try {
+        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
+            headers: getZohoHeaders(decryptToken)
         });
-      }
-    } else {
-      res
-        .status(500)
-        .json({ message: "An error occurred while interacting with Zoho CRM" });
+        const requestType = checkUserResponse.status === 200 ? SUPPORT_REQUEST.COMMENT : SUPPORT_REQUEST.NEW_TICKET;
+
+        req.body.data[0].Request_Type = [requestType];
+
+        const response = await axios.post(zohoApiBaseUrlForSupport, sanitizeHtml(JSON.stringify(req.body)), {
+            headers: getZohoHeaders(decryptToken)
+        });
+        if (response.status === 200 || response.status === 201) {
+            return res.status(response.status).send({ ...response.data, message: req.t("SUPPORT_MESSAGE") });
+        }
+        else {
+            return res.status(response.status).json({ message: req.t("FAILED_SUPPORT") });
+        }
+
+    } catch (error) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
+                headers: getZohoHeaders(decryptToken)
+            });
+            const requestType = checkUserResponse.status === 200 ? SUPPORT_REQUEST.COMMENT : SUPPORT_REQUEST.NEW_TICKET;
+
+            req.body.data[0].Request_Type = [requestType];
+
+            try {
+                const responseData = await commonFunForCatch(zohoApiBaseUrlForSupport, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
+                return res.status(200).json({ data: responseData, message: req.t("SUPPORT_MESSAGE") });
+            } catch (error) {
+                return res.status(500).json({ message: req.t("CATCH_ERROR") });
+            }
+        } else {
+            return res.status(500).json({ message: req.t("CATCH_ERROR") });
+        }
     }
-  }
+};
+
+
+exports.checkOrderId = async (req, res) => {
+
+    const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
+
+    try {
+        let decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
+            headers: getZohoHeaders(decryptToken)
+        });
+        if (checkUserResponse.status === 200) {
+            return res.json({ status: 200, data: { Order_Id: checkUserResponse?.data?.data[0].Order_Id } });
+        }
+        else {
+            return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
+        }
+
+    } catch (error) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
+                headers: getZohoHeaders(decryptToken)
+            });
+
+            if (checkUserResponse.status === 200 || checkUserResponse.status === 201) {
+                return res.json({ status: 200, data: checkUserResponse?.data?.data[0].Order_Id });
+            } else {
+                return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
+            }
+        } else {
+        }
+        return res.status(500).json({ message: req.t("CATCH_ERROR") });
+    }
 };
