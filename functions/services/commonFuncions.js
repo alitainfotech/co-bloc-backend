@@ -1,6 +1,8 @@
 var CryptoJS = require("crypto-js");
 const axios = require("axios");
 const { REFRESH_TOKEN } = require("../commonConstant");
+const Mailgun = require('mailgun.js');
+const formData = require('form-data');
 require("dotenv").config()
 
 
@@ -14,7 +16,7 @@ const truncateToDecimals = (num, dec = 2) => {
 // for Decrypt token to Access token
 const decryptAccessToken = (data, secretKey) => {
     try {
-        let accessToken = (data && data.headers) ?  data.headers.authorization.split(" ")[1] : data;
+        let accessToken = (data && data.headers) ? data.headers.authorization.split(" ")[1] : data;
         let bytes = CryptoJS.AES.decrypt(accessToken, secretKey);
         let decryptToken = bytes.toString(CryptoJS.enc.Utf8);
         return decryptToken;
@@ -124,11 +126,54 @@ const sanitizeHtml = (html) => {
     return html.replace(/</g, '&lt;');
 };
 
+
+const dataSendWithMail = async (data, subject) => {
+    const mailgun = new Mailgun(formData);
+    const client = mailgun.client({
+        username: process.env.MAILGUN_USERNAME,
+        key: process.env.API_KEY,
+        url: process.env.MAILGUN_URL
+    });
+
+    const messageData = {
+        from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
+        to: "info@entertainment-lab.fr",
+        subject: `Urgent: Manual Entry Required for ${subject} in Zoho CRM`,
+        html: `Dear Team,
+
+        I wanted to bring to your attention a technical issue that has recently come to our notice regarding the addition of user details in Zoho CRM.
+        
+        It has been observed that some users have encountered difficulties while attempting to add user details to Zoho CRM due to a technical glitch. Regrettably, this issue has resulted in the failure to store these crucial details in our CRM system automatically.
+        
+        In order to ensure that no important user information is lost, we kindly request your immediate assistance. We need to manually input the affected user details into Zoho CRM to maintain the integrity of our records and to ensure that our processes continue to run smoothly.
+        
+        To facilitate this process, please follow these steps:
+        
+        ${data}
+        
+        Thank you for your dedication and swift action in resolving this issue. Your efforts are essential in keeping our operations running smoothly.<br><br>
+
+        
+        Best regards,<br><br>
+
+        Co-Bloc support`
+    };
+
+    client.messages.create(process.env.DOMAIN, messageData)
+        .then((response) => {
+            console.log('Email sent successfully:', response);
+        })
+        .catch((err) => {
+            console.log('Error sending email', err);
+        })
+}
+
 module.exports = {
     decryptAccessToken,
     getZohoHeaders,
     refreshAccessToken,
     commonFunForCatch,
     sanitizeHtml,
-    truncateToDecimals
+    truncateToDecimals,
+    dataSendWithMail
 }
