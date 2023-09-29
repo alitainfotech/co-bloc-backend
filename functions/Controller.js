@@ -20,7 +20,8 @@ const {
     refreshAccessToken,
     commonFunForCatch,
     truncateToDecimals,
-    sanitizeHtml
+    sanitizeHtml,
+    dataSendWithMail
 } = require('./services/commonFuncions');
 
 
@@ -84,6 +85,20 @@ exports.addUser = async (req, res) => {
 
     const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
 
+    const userData = req.body.data[0];
+
+    let dataHTML = `<h1>Customer Details</h1>
+    <p><strong>Name:</strong> ${userData.Name}</p>
+    <p><strong>Last Name:</strong> ${userData.Last_Name}</p>
+    <p><strong>Email:</strong> ${userData.Email}</p>
+    <p><strong>Phone Number:</strong> ${userData.Phone_Number}</p>
+    <p><strong>Address Line:</strong> ${userData.Address_Line}</p>
+    <p><strong>Country:</strong> ${userData.Country}</p>
+    <p><strong>Zip Code:</strong> ${userData.Zip_Code}</p>
+    <p><strong>City:</strong> ${userData.City}</p> `
+
+    let subject = "Customers Details"
+
     try {
         const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
 
@@ -136,9 +151,11 @@ exports.addUser = async (req, res) => {
                     return res.status(checkUserResponse.status).json(checkUserResponse.data);
                 }
             } catch (error) {
+                await dataSendWithMail(dataHTML, subject)
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
             }
         } else {
+            await dataSendWithMail(dataHTML, subject)
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -148,6 +165,19 @@ exports.addUser = async (req, res) => {
 exports.Payment = async (req, res) => {
 
     const zohoApiBaseUrlforPayment = `${process.env.ZOHO_CRM_V2_URL}/Payment`;
+
+    const userData = req.body.data[0];
+
+    let dataHTML = `
+            <h1>Payment Details</h1>
+            <p><strong>Payment Name:</strong> ${userData.Name}</p>
+            <p><strong>Order ID:</strong> ${userData.Order_Id}</p>
+            <p><strong>Amount:</strong> ${userData.Amount} </p>
+            <p><strong>Payment Currency:</strong> ${userData.Payment_Currency}</p>
+            <p><strong>Payment Status:</strong> ${userData.Payment_Status}</p>
+        `
+
+    let subject = "Payment Details"
 
     try {
         const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
@@ -186,9 +216,11 @@ exports.Payment = async (req, res) => {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforPayment, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
                 return res.status(200).send(responseData);
             } catch (error) {
+                await dataSendWithMail(dataHTML, subject);
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
             }
         } else {
+            await dataSendWithMail(dataHTML, subject);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -197,6 +229,20 @@ exports.Payment = async (req, res) => {
 exports.Order = async (req, res) => {
 
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
+
+    const userData = req.body.data[0];
+
+    let dataHTML = `
+            <h1>Order Details</h1>
+            <p><strong>Quantity:</strong> ${userData.Ordered_Items[0].Quantity}</p>
+            <p><strong>Payment Currency:</strong> ${userData.Payment_Currency}</p>
+            <p><strong>Billing Country:</strong> ${userData.Billing_Country} </p>
+            <p><strong>Billing City:</strong> ${userData.Billing_City}</p>
+            <p><strong>Billing Street:</strong> ${userData.Billing_Street}</p>
+            <p><strong>Billing Code:</strong> ${userData.Billing_Code}</p>
+        `
+
+    let subject = "Order Details"
 
     try {
         const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
@@ -235,9 +281,11 @@ exports.Order = async (req, res) => {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
                 return res.status(200).send(responseData);
             } catch (error) {
+                await dataSendWithMail(dataHTML, subject);
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
             }
         } else {
+            await dataSendWithMail(dataHTML, subject);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -246,6 +294,22 @@ exports.Order = async (req, res) => {
 exports.Invoice = async (req, res) => {
 
     const zohoApiBaseUrlforInvoice = `${process.env.ZOHO_CRM_V5_URL}/Invoices`;
+
+    const userData = req.body.data[0];
+
+    let dataHTML = `
+            <h1>Invoice Details</h1>
+            <p><strong>Invoice Date:</strong> ${userData.Invoice_Date}</p>
+            <p><strong>Billing Country:</strong> ${userData.Billing_Country} </p>
+            <p><strong>Billing City:</strong> ${userData.Billing_City}</p>
+            <p><strong>Billing Street:</strong> ${userData.Billing_Street}</p>
+            <p><strong>Billing Code:</strong> ${userData.Billing_Code}</p>
+            <p><strong>Quantity:</strong> ${userData.Invoiced_Items[0].Quantity}</p>
+            <p><strong>Subject:</strong> ${userData.Subject}</p>
+            <p><strong>Account Name:</strong> ${userData.Account_Name}</p>
+        `
+
+    let subject = "Invoice Details"
 
     try {
         const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
@@ -353,9 +417,11 @@ exports.Invoice = async (req, res) => {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforInvoice, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
                 return res.status(200).send(responseData);
             } catch (error) {
+                await dataSendWithMail(dataHTML, subject);
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
             }
         } else {
+            await dataSendWithMail(dataHTML, subject);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -365,6 +431,17 @@ exports.Support = async (req, res) => {
 
     const zohoApiBaseUrlForSupport = `${process.env.ZOHO_CRM_V5_URL}/Support`;
     const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
+
+    const userData = req.body.data[0];
+
+    let dataHTML = `
+            <h1>Support Details</h1>
+            <p><strong>Name:</strong> ${userData.Name}</p>
+            <p><strong>Email:</strong> ${userData.Email} </p>
+            <p><strong>Message:</strong> ${userData.Message}</p>
+        `
+
+    let subject = "Support Details"
 
     try {
         const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
@@ -406,9 +483,11 @@ exports.Support = async (req, res) => {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlForSupport, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
                 return res.status(200).json({ data: responseData, message: req.t("SUPPORT_MESSAGE") });
             } catch (error) {
+                await dataSendWithMail(dataHTML, subject);
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
             }
         } else {
+            await dataSendWithMail(dataHTML, subject);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -451,7 +530,47 @@ exports.checkOrderId = async (req, res) => {
                 return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
             }
         } else {
+            return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
-        return res.status(500).json({ message: req.t("CATCH_ERROR") });
     }
 };
+
+
+exports.checkEmail = async (req, res) => {
+    const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
+
+    try {
+        let decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
+            headers: getZohoHeaders(decryptToken)
+        });
+        if (checkUserResponse.status === 200) {
+            return res.json({ status: 200, data: { isValid: true } });
+        }
+        else {
+            return res.json({ status: 204, data: { isValid: false } });
+        }
+    } catch (error) {
+        if (
+            error.response &&
+            STATUS_CODE.includes(error.response.status) &&
+            STATUS_ERROR.includes(error.response.data.code)
+        ) {
+            const newAccessToken = await refreshAccessToken();
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+            const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
+                headers: getZohoHeaders(decryptToken)
+            });
+            if (checkUserResponse.status === 200) {
+                return res.json({ status: 200, data: { isValid: true } });
+            }
+            else {
+                return res.json({ status: 204, data: { isValid: false } });
+            }
+        } else {
+            return res.status(500).json({ message: req.t("CATCH_ERROR") });
+        }
+    }
+}
