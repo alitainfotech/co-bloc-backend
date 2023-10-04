@@ -512,3 +512,15 @@ exports.checkEmail = async (req, res) => {
         }
     }
 }
+
+exports.ZohoWebhook = async (req, res) => {
+    try {
+        const { Status } = req.body;
+        console.log(req.body);
+
+        res.status(200).json({ data: Status });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+};
