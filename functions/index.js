@@ -10,14 +10,8 @@ const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, chec
 const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
-const corsOptions = {
-    origin: 'https://www.co-bloc.fr',
-    methods: 'GET,POST',
-    credentials: true,
-    optionsSuccessStatus: 204,
-};
 
-app.use(cors({ origin: [process.env.BASE_URL, process.env.TEST_BASE_URL, process.env.CO_BLOC_BASE_URL, corsOptions] }))
+app.use(cors({ origin: [process.env.BASE_URL, process.env.TEST_BASE_URL, process.env.CO_BLOC_BASE_URL] }))
 
 app.use(middleware.handle(i18next))
 
