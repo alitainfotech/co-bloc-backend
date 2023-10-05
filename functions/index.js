@@ -33,6 +33,5 @@ app.post('/Support', Support);
 app.get('/Token', RefreshAccessToken);
 app.post('/CheckOrderId', checkOrderId);
 app.post('/CheckEmail', checkEmail);
-app.post('/ZohoWebhook', ZohoWebhook);
 
 exports.app = functions.https.onRequest(app)
