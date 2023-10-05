@@ -214,7 +214,7 @@ exports.Order = async (req, res) => {
     try {
         const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
 
-        const response = await axios.post(zohoApiBaseUrlforOrder, sanitizeHtml(JSON.stringify({ ...req.body, formData: userData })), {
+        const response = await axios.post(zohoApiBaseUrlforOrder, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
             headers: getZohoHeaders(decryptToken)
         });
         if (response.status === 200 || response.status === 201) {
@@ -236,6 +236,7 @@ exports.Order = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
         }
     } catch (error) {
+        console.log("error========>>",error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -359,6 +360,7 @@ exports.Invoice = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_INVOICE") });
         }
     } catch (error) {
+        console.log("error----------->", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -512,15 +514,3 @@ exports.checkEmail = async (req, res) => {
         }
     }
 }
-
-exports.ZohoWebhook = async (req, res) => {
-    try {
-        const { Status } = req.body;
-        console.log("req.body*****************", req.body);
-
-        res.status(200).json({ data: Status });
-    } catch (error) {
-        console.error(error);
-        res.status(500).send('Internal Server Error');
-    }
-};
