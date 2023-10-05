@@ -149,46 +149,46 @@ const dataSendWithMail = async (FormData) => {
         
         <h1><strong>Customer Information:</strong></h1>
     <ul>
-        <li><strong>Name:</strong> ${FormData.Name}</li>
-        <li><strong>Last Name:</strong> ${FormData.Last_Name}</li>
-        <li><strong>Email:</strong> ${FormData.Email}</li>
-        <li><strong>Phone Number:</strong> ${FormData.Phone_Number}</li>
-        <li><strong>Address Line:</strong> ${FormData.Address_Line}</li>
-        <li><strong>Country:</strong> ${FormData.Country}</li>
-        <li><strong>Zip Code:</strong> ${FormData.Zip_Code}</li>
-        <li><strong>City:</strong> ${FormData.City}</li>
+        <li><strong>Name:</strong> ${FormData?.Name}</li>
+        <li><strong>Last Name:</strong> ${FormData?.Last_Name}</li>
+        <li><strong>Email:</strong> ${FormData?.Email}</li>
+        <li><strong>Phone Number:</strong> ${FormData?.Phone_Number}</li>
+        <li><strong>Address Line:</strong> ${FormData?.Address_Line}</li>
+        <li><strong>Country:</strong> ${FormData?.Country}</li>
+        <li><strong>Zip Code:</strong> ${FormData?.Zip_Code}</li>
+        <li><strong>City:</strong> ${FormData?.City}</li>
     </ul> 
 
         <h1><strong>Order Information:</strong></h1>
     <ul>
-        <li><strong>Quantity:</strong> ${FormData.Ordered_Items[0].Quantity}</li>
-        <li><strong>Payment Currency:</strong> ${FormData.Payment_Currency}</li>
-        <li><strong>Billing Country:</strong> ${FormData.Billing_Country}</li>
-        <li><strong>Billing City:</strong> ${FormData.Billing_City}</li>
-        <li><strong>Billing Street:</strong> ${FormData.Billing_Street}</li>
-        <li><strong>Billing Code:</strong> ${FormData.Billing_Code}</li>
+        <li><strong>Quantity:</strong> ${FormData?.Ordered_Items[0]?.Quantity}</li>
+        <li><strong>Payment Currency:</strong> ${FormData?.Payment_Currency}</li>
+        <li><strong>Billing Country:</strong> ${FormData?.Billing_Country}</li>
+        <li><strong>Billing City:</strong> ${FormData?.Billing_City}</li>
+        <li><strong>Billing Street:</strong> ${FormData?.Billing_Street}</li>
+        <li><strong>Billing Code:</strong> ${FormData?.Billing_Code}</li>
     </ul>
 
         <h1><strong>Payment Information:</strong></h1>
     <ul>
-        <li><strong>Payment Id:</strong> ${FormData.payment_id}</li>
-        <li><strong>Order ID:</strong> ${FormData.Order_Id}</li>
-        <li><strong>Amount:</strong> ${FormData.Amount}</li>
-        <li><strong>Payment Currency:</strong> ${FormData.Payment_Currency}</li>
-        <li><strong>Payment Status:</strong> ${FormData.Payment_Status}</li>
+        <li><strong>Payment Id:</strong> ${FormData?.payment_id}</li>
+        <li><strong>Order ID:</strong> ${FormData?.Order_Id}</li>
+        <li><strong>Amount:</strong> ${FormData?.Amount}</li>
+        <li><strong>Payment Currency:</strong> ${FormData?.Payment_Currency}</li>
+        <li><strong>Payment Status:</strong> ${FormData?.Payment_Status}</li>
     </ul>    
 
         <h1><strong>Invoice Information:</strong></h1>
     <ul>
-        <li><strong>Customer Name:</strong> ${FormData.Name}</li>
-        <li><strong>Invoice Date:</strong> ${FormData.Invoice_Date}</li>
-        <li><strong>Billing Country:</strong> ${FormData.Billing_Country} </li>
-        <li><strong>Billing City:</strong> ${FormData.Billing_City}</li>
-        <li><strong>Billing Street:</strong> ${FormData.Billing_Street}</li>
-        <li><strong>Billing Code:</strong> ${FormData.Billing_Code}</li>
-        <li><strong>Quantity:</strong> ${FormData.Invoiced_Items[0].Quantity}</li>
-        <li><strong>Subject:</strong> ${FormData.Subject}</li>
-        <li><strong>Account Name:</strong> ${FormData.Account_Name}</li>
+        <li><strong>Customer Name:</strong> ${FormData?.Name}</li>
+        <li><strong>Invoice Date:</strong> ${FormData?.Invoice_Date}</li>
+        <li><strong>Billing Country:</strong> ${FormData?.Billing_Country} </li>
+        <li><strong>Billing City:</strong> ${FormData?.Billing_City}</li>
+        <li><strong>Billing Street:</strong> ${FormData?.Billing_Street}</li>
+        <li><strong>Billing Code:</strong> ${FormData?.Billing_Code}</li>
+        <li><strong>Quantity:</strong> ${FormData?.Invoiced_Items[0]?.Quantity}</li>
+        <li><strong>Subject:</strong> ${FormData?.Subject}</li>
+        <li><strong>Account Name:</strong> ${FormData?.Account_Name}</li>
     </ul>    
 
         Thank you for your dedication and swift action in resolving this issue.Your efforts are essential in keeping our operations running smoothly.<br><br><br>
