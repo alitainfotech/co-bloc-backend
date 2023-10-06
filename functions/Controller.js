@@ -272,6 +272,9 @@ exports.Invoice = async (req, res) => {
         const response = await axios.post(zohoApiBaseUrlforInvoice, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })), {
             headers: getZohoHeaders(decryptToken)
         });
+
+        console.log("FormData=================>>>>>",FormData);
+
         if (response.status === 200 || response.status === 201) {
             const responseData = response.data;
             if (responseData && responseData.data && responseData.data[0].details.id) {
