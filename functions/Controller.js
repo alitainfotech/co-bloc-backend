@@ -50,10 +50,8 @@ exports.RefreshAccessToken = async (req, res) => {
 
         if (responseData.access_token) {
             const accessToken = responseData.access_token;
-            console.log("normal token from refresh token function---------------------", accessToken);
+            console.log("accessToken---------------------", accessToken);
             let bcryptToken = CryptoJS.AES.encrypt(accessToken, process.env.SECRET_KEY).toString();
-            console.log("encryoted accessToken from refresh token function---------------------", bcryptToken);
-
             return res.json({ accessToken: bcryptToken });
         } else {
             console.error('Error refreshing access token. Response:', responseData);
@@ -215,7 +213,7 @@ exports.Order = async (req, res) => {
     const formData = userData.formData
 
     try {
-        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
+        let decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
         if (!decryptToken) {
             const newAccessToken = await refreshAccessToken();
             decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
@@ -275,7 +273,7 @@ exports.Invoice = async (req, res) => {
     const FormData = userData.formData
 
     try {
-        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
+        let decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
         console.log("decryptToken---------------------------", decryptToken);
         if (!decryptToken) {
             const newAccessToken = await refreshAccessToken();
