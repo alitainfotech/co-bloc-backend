@@ -580,10 +580,13 @@ exports.checkEmail = async (req, res) => {
 exports.ZohoWebhook = async (req, res) => {
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
     try {
+        const orderId = req.body.OrderId;
+        if(!orderId) {
+            return res.status(400).json({ message: req.t("BAD_REQUEST") });
+        }
         const newAccessToken = await refreshAccessToken();
 
         const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
-
         const response = await axios.get(`${zohoApiBaseUrlforOrder}/${orderId}`, {
             headers: getZohoHeaders(decryptToken)
         });
