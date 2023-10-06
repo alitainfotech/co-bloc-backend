@@ -13,12 +13,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.use(
     cors({
-        origin: [
-            process.env.BASE_URL,
-            process.env.TEST_BASE_URL,
-            process.env.CO_BLOC_BASE_URL,
-            process.env.CO_BLOC_BASE_URL1,
-        ],
+        origin: "*"
     })
 );
 
@@ -33,5 +28,6 @@ app.post('/Support', Support);
 app.get('/Token', RefreshAccessToken);
 app.post('/CheckOrderId', checkOrderId);
 app.post('/CheckEmail', checkEmail);
+app.post('/ZohoWebhook', ZohoWebhook);
 
 exports.app = functions.https.onRequest(app)

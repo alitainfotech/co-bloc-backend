@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Order Generated</title>
+</head>
+
+<body style="font-family: Arial, sans-serif;">
+
+  <table style="width: 100%;">
+    <tr>
+      <td>
+        <p>Dear <%= CustomerName %> <%= LastName %>,</p>
+        <br>
+        <p>This is to inform you that a new order has been generated.</p>
+        <p>The total amount due is €<%= SubTotal %>.</p>
+        <p>Thank you for choosing Co-Bloc.</p>
+        <br>
+        <p>Sincerely,</p>
+        <p>[Co Bloc]</p>
+      </td>
+    </tr>
+  </table>
+</body>
+
+</html>

@@ -88,7 +88,7 @@ exports.addUser = async (req, res) => {
     const formData = userData.formData
 
     try {
-        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
             headers: getZohoHeaders(decryptToken)
@@ -126,7 +126,7 @@ exports.addUser = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken =await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
                 const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
@@ -158,7 +158,7 @@ exports.Payment = async (req, res) => {
     const formData = userData.formData
 
     try {
-        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const response = await axios.post(zohoApiBaseUrlforPayment, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
             headers: getZohoHeaders(decryptToken)
@@ -188,7 +188,7 @@ exports.Payment = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken =await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforPayment, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })));
@@ -209,12 +209,12 @@ exports.Order = async (req, res) => {
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
 
     const userData = req.body.data[0];
-    const formData = userData.formData
+    const FormData = userData.formData
 
     try {
-        let decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
-        
-        const response = await axios.post(zohoApiBaseUrlforOrder, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
+        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
+
+        const response = await axios.post(zohoApiBaseUrlforOrder, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })), {
             headers: getZohoHeaders(decryptToken)
         });
         if (response.status === 200 || response.status === 201) {
@@ -227,6 +227,70 @@ exports.Order = async (req, res) => {
                 });
 
                 if (getUserResponse.status === 200) {
+
+                    const userResponseData = getUserResponse.data;
+                    const orderData = userResponseData.data[0];
+
+                    const mailgun = new Mailgun(formData);
+                    const client = mailgun.client({
+                        username: process.env.MAILGUN_USERNAME,
+                        key: process.env.API_KEY,
+                        url: process.env.MAILGUN_URL
+                    });
+
+                    const htmlTemplatePath = path.join(__dirname, "./orderPlaced.ejs");
+                    const htmltemplateContent = fs.readFileSync(htmlTemplatePath, "utf8");
+
+                    const orderhtml = ejs.render(htmltemplateContent, {
+                        CustomerName: orderData.Customer_Name.name,
+                        LastName: orderData.Last_Name,
+                        orderNumber: orderData.Order_Id,
+                        orderDate: orderData.Modified_Time,
+                        BillingStreet: orderData.Billing_Street,
+                        BillingCity: orderData.Billing_City,
+                        BillingCountry: orderData.Billing_Country,
+                        ProductName: orderData.Ordered_Items[0].Product_Name.name,
+                        Quantity: orderData.Ordered_Items[0].Quantity,
+                        ListPrice: orderData.Ordered_Items[0].List_Price,
+                        SubTotal: orderData.Sub_Total,
+                    })
+
+                    const browser = await puppeteer.launch({ headless: "new" });
+                    const page = await browser.newPage();
+                    await page.setContent(orderhtml);
+                    const pdfBuffer = await page.pdf();
+                    await browser.close();
+
+                    const orderTemplatePath = path.join(__dirname, "./orderPlacedtext.ejs");
+                    const ordertemplateContent = fs.readFileSync(orderTemplatePath, "utf8");
+                    const html = ejs.render(ordertemplateContent, {
+                        CustomerName: orderData.Customer_Name.name,
+                        LastName: orderData.Last_Name,
+                        SubTotal: orderData.Sub_Total,
+
+                    })
+
+                    const messageData = {
+                        from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
+                        to: orderData?.Email,
+                        subject: `New Order from Co-Bloc #${orderData.Order_Id}`,
+                        html: html,
+                        attachment: [
+                            {
+                                data: pdfBuffer,
+                                filename: `${orderData.Order_Id}.pdf`,
+                            },
+                        ],
+                    };
+
+                    client.messages.create(process.env.DOMAIN, messageData)
+                        .then((response) => {
+                            console.log('Email sent successfully:', response);
+                        })
+                        .catch((err) => {
+                            console.log('Error sending email', err);
+                        })
+
                     return res.status(getUserResponse.status).send(getUserResponse.data);
                 } else {
                     return res.status(getUserResponse.status).json({ message: req.t("ORDER_FETCH_DATA_FAILED") });
@@ -236,17 +300,17 @@ exports.Order = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
         }
     } catch (error) {
-        console.log("error========>>",error);
+        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken =await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
-                const responseData = await commonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify({ ...req.body, formData: userData })));
+                const responseData = await commonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })));
                 return res.status(200).send(responseData);
             } catch (error) {
                 await dataSendWithMail(formData);
@@ -267,8 +331,8 @@ exports.Invoice = async (req, res) => {
     const FormData = userData.formData
 
     try {
-        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
-        
+        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
+
         const response = await axios.post(zohoApiBaseUrlforInvoice, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })), {
             headers: getZohoHeaders(decryptToken)
         });
@@ -386,7 +450,7 @@ exports.Support = async (req, res) => {
     const zohoApiBaseUrlForSupport = `${process.env.ZOHO_CRM_V5_URL}/Support`;
 
     try {
-        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const response = await axios.post(zohoApiBaseUrlForSupport, sanitizeHtml(JSON.stringify(req.body)), {
             headers: getZohoHeaders(decryptToken)
@@ -417,7 +481,7 @@ exports.Support = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken =await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlForSupport, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
@@ -437,7 +501,7 @@ exports.checkOrderId = async (req, res) => {
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
 
     try {
-        let decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
             headers: getZohoHeaders(decryptToken)
@@ -478,7 +542,7 @@ exports.checkEmail = async (req, res) => {
     const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
 
     try {
-        let decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
+        let decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
             headers: getZohoHeaders(decryptToken)
@@ -512,3 +576,55 @@ exports.checkEmail = async (req, res) => {
         }
     }
 }
+
+exports.ZohoWebhook = async (req, res) => {
+    const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
+    try {
+        const newAccessToken = await refreshAccessToken();
+
+        const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+
+        const response = await axios.get(`${zohoApiBaseUrlforOrder}/${orderId}`, {
+            headers: getZohoHeaders(decryptToken)
+        });
+        const responseData = response.data.data[0]
+
+        const htmlTemplatePath = path.join(__dirname, "./orderConfirmation.ejs");
+        const htmltemplateContent = fs.readFileSync(htmlTemplatePath, "utf8");
+
+        const html = ejs.render(htmltemplateContent, {
+            Customer_Name: responseData.Customer_Name.name,
+            Billing_Street: responseData.Billing_Street,
+            Billing_City: responseData.Billing_City,
+            Billing_Country: responseData.Billing_Country,
+        })
+
+        const mailgun = new Mailgun(formData);
+        const client = mailgun.client({
+            username: process.env.MAILGUN_USERNAME,
+            key: process.env.API_KEY,
+            url: process.env.MAILGUN_URL
+        });
+
+        const messageData = {
+            from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
+            to: responseData.Email,
+            subject: `Order Shipment Notification for Your Co-bloc Game`,
+            html: html
+        }
+
+        client.messages.create(process.env.DOMAIN, messageData)
+            .then((response) => {
+                console.log('Email sent successfully:', response);
+            })
+            .catch((err) => {
+                console.log('Error sending email', err);
+            })
+
+        return res.status(200).send('Email sent successfully');
+    }
+    catch (error) {
+        // console.log(error);
+        return res.status(500).json({ message: req.t("CATCH_ERROR") });
+    }
+};
