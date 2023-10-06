@@ -267,12 +267,11 @@ exports.Invoice = async (req, res) => {
     const FormData = userData.formData
 
     try {
-        let decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
         
         const response = await axios.post(zohoApiBaseUrlforInvoice, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })), {
             headers: getZohoHeaders(decryptToken)
         });
-
         if (response.status === 200 || response.status === 201) {
             const responseData = response.data;
             if (responseData && responseData.data && responseData.data[0].details.id) {
@@ -282,7 +281,6 @@ exports.Invoice = async (req, res) => {
                     headers: getZohoHeaders(decryptToken)
                 });
                 if (getUserResponse.status === 200 || getUserResponse.status === 201) {
-
                     const userResponseData = getUserResponse.data;
                     const invoiceData = userResponseData.data[0];
                     const mailgun = new Mailgun(formData);
@@ -343,7 +341,6 @@ exports.Invoice = async (req, res) => {
                             },
                         ],
                     };
-
                     client.messages.create(process.env.DOMAIN, messageData)
                         .then((response) => {
                             console.log('Email sent successfully:', response);
