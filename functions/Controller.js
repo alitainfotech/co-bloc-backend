@@ -50,6 +50,7 @@ exports.RefreshAccessToken = async (req, res) => {
 
         if (responseData.access_token) {
             const accessToken = responseData.access_token;
+            console.log("accessToken---------------------", accessToken);
             let bcryptToken = CryptoJS.AES.encrypt(accessToken, process.env.SECRET_KEY).toString();
             return res.json({ accessToken: bcryptToken });
         } else {
@@ -268,7 +269,7 @@ exports.Invoice = async (req, res) => {
 
     try {
         const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
-
+        console.log("decryptToken---------------------------", decryptToken);
         const response = await axios.post(zohoApiBaseUrlforInvoice, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })), {
             headers: getZohoHeaders(decryptToken)
         });
