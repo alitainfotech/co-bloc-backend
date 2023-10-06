@@ -627,7 +627,7 @@ exports.ZohoWebhook = async (req, res) => {
         return res.status(200).send('Email sent successfully');
     }
     catch (error) {
-        // console.log(error);
+        console.log("***************** Order send webshook error: *******************", error);
         return res.status(500).json({ message: req.t("CATCH_ERROR") });
     }
 };
