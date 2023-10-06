@@ -50,8 +50,10 @@ exports.RefreshAccessToken = async (req, res) => {
 
         if (responseData.access_token) {
             const accessToken = responseData.access_token;
-            console.log("accessToken---------------------", accessToken);
+            console.log("normal token from refresh token function---------------------", accessToken);
             let bcryptToken = CryptoJS.AES.encrypt(accessToken, process.env.SECRET_KEY).toString();
+            console.log("encryoted accessToken from refresh token function---------------------", bcryptToken);
+
             return res.json({ accessToken: bcryptToken });
         } else {
             console.error('Error refreshing access token. Response:', responseData);
@@ -89,7 +91,7 @@ exports.addUser = async (req, res) => {
     const formData = userData.formData
 
     try {
-        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
             headers: getZohoHeaders(decryptToken)
@@ -127,7 +129,7 @@ exports.addUser = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken =await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
                 const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
@@ -159,7 +161,7 @@ exports.Payment = async (req, res) => {
     const formData = userData.formData
 
     try {
-        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const response = await axios.post(zohoApiBaseUrlforPayment, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
             headers: getZohoHeaders(decryptToken)
@@ -189,7 +191,7 @@ exports.Payment = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken =await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforPayment, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })));
@@ -213,8 +215,11 @@ exports.Order = async (req, res) => {
     const formData = userData.formData
 
     try {
-        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
-
+        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
+        if (!decryptToken) {
+            const newAccessToken = await refreshAccessToken();
+            decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+        }
         const response = await axios.post(zohoApiBaseUrlforOrder, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
             headers: getZohoHeaders(decryptToken)
         });
@@ -243,8 +248,10 @@ exports.Order = async (req, res) => {
             STATUS_CODE.includes(error.response.status) &&
             STATUS_ERROR.includes(error.response.data.code)
         ) {
-            const newAccessToken = await refreshAccessToken();
-            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            if (!decryptToken) {
+                const newAccessToken = await refreshAccessToken();
+                decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+              }
 
             try {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify({ ...req.body, formData: userData })));
@@ -268,8 +275,12 @@ exports.Invoice = async (req, res) => {
     const FormData = userData.formData
 
     try {
-        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
         console.log("decryptToken---------------------------", decryptToken);
+        if (!decryptToken) {
+            const newAccessToken = await refreshAccessToken();
+            decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+        }
         const response = await axios.post(zohoApiBaseUrlforInvoice, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })), {
             headers: getZohoHeaders(decryptToken)
         });
@@ -371,7 +382,7 @@ exports.Invoice = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforInvoice, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })));
@@ -392,7 +403,7 @@ exports.Support = async (req, res) => {
     const zohoApiBaseUrlForSupport = `${process.env.ZOHO_CRM_V5_URL}/Support`;
 
     try {
-        const decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+        const decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const response = await axios.post(zohoApiBaseUrlForSupport, sanitizeHtml(JSON.stringify(req.body)), {
             headers: getZohoHeaders(decryptToken)
@@ -423,7 +434,7 @@ exports.Support = async (req, res) => {
             STATUS_ERROR.includes(error.response.data.code)
         ) {
             const newAccessToken = await refreshAccessToken();
-            const decryptToken = decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
+            const decryptToken =await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
             try {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlForSupport, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify(req.body)));
@@ -443,7 +454,7 @@ exports.checkOrderId = async (req, res) => {
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
 
     try {
-        let decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+        let decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
             headers: getZohoHeaders(decryptToken)
@@ -484,7 +495,7 @@ exports.checkEmail = async (req, res) => {
     const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
 
     try {
-        let decryptToken = decryptAccessToken(req, process.env.SECRET_KEY);
+        let decryptToken =await decryptAccessToken(req, process.env.SECRET_KEY);
 
         const checkUserResponse = await axios.get(`${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`, {
             headers: getZohoHeaders(decryptToken)
