@@ -5,12 +5,22 @@ const cors = require('cors')
 require("dotenv").config()
 const { middleware, i18next } = require('./helpers/i18next');
 
-const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, checkOrderId } = require('./Controller');
+const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, checkOrderId, checkEmail, ZohoWebhook } = require('./Controller');
 
 const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: false }))
-app.use(cors({ origin: [process.env.BASE_URL, process.env.TEST_BASE_URL] }))
+
+app.use(
+    cors({
+        origin: [
+            process.env.BASE_URL,
+            process.env.TEST_BASE_URL,
+            process.env.CO_BLOC_BASE_URL,
+            process.env.CO_BLOC_BASE_URL1,
+        ],
+    })
+);
 
 app.use(middleware.handle(i18next))
 
@@ -22,5 +32,6 @@ app.post('/Invoice', Invoice);
 app.post('/Support', Support);
 app.get('/Token', RefreshAccessToken);
 app.post('/CheckOrderId', checkOrderId);
+app.post('/CheckEmail', checkEmail);
 
 exports.app = functions.https.onRequest(app)
