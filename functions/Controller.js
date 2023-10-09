@@ -120,6 +120,7 @@ exports.addUser = async (req, res) => {
             return res.status(checkUserResponse.status).json(checkUserResponse.data);
         }
     } catch (error) {
+        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -182,6 +183,7 @@ exports.Payment = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_PAYMENT") });
         }
     } catch (error) {
+        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -411,6 +413,7 @@ exports.Support = async (req, res) => {
         }
 
     } catch (error) {
+        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -450,6 +453,7 @@ exports.checkOrderId = async (req, res) => {
         }
 
     } catch (error) {
+        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -490,6 +494,7 @@ exports.checkEmail = async (req, res) => {
             return res.json({ status: 204, data: { isValid: false } });
         }
     } catch (error) {
+        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
