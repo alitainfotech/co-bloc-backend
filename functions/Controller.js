@@ -160,8 +160,6 @@ exports.Payment = async (req, res) => {
     try {
         const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
-        console.log("decryptToken====================>>>",decryptToken);
-
         const response = await axios.post(zohoApiBaseUrlforPayment, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
             headers: getZohoHeaders(decryptToken)
         });
