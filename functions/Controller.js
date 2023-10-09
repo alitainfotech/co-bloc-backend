@@ -244,8 +244,8 @@ exports.Order = async (req, res) => {
                     const orderhtml = ejs.render(htmltemplateContent, {
                         CustomerName: orderData.Customer_Name.name,
                         LastName: orderData.Last_Name,
-                        orderNumber: orderData.Order_Id,
-                        orderDate: orderData.Modified_Time.split('T')[0],
+                        OrderNumber: orderData.Order_Id,
+                        OrderDate: orderData.Modified_Time.split('T')[0],
                         BillingStreet: orderData.Billing_Street,
                         BillingCity: orderData.Billing_City,
                         BillingCountry: orderData.Billing_Country,
