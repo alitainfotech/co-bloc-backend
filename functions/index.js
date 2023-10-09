@@ -13,9 +13,16 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.use(
     cors({
-        origin: "*"
+      origin: [
+        process.env.BASE_URL,
+        process.env.TEST_BASE_URL,
+        process.env.CO_BLOC_BASE_URL,
+        process.env.CO_BLOC_BASE_URL1,
+      ],
     })
-);
+  );
+
+app.use('/static', express.static(__dirname + '/public'));
 
 app.use(middleware.handle(i18next))
 
