@@ -14,14 +14,28 @@ const truncateToDecimals = (num, dec = 2) => {
 
 
 // for Decrypt token to Access token
-const decryptAccessToken = (data, secretKey) => {
+const decryptAccessToken = async (data, secretKey) => {
     try {
         let accessToken = (data && data.headers) ? data.headers.authorization.split(" ")[1] : data;
+    
+        if (!accessToken) {
+            console.error("Access token is empty or undefined.");
+            return null;
+        }
+    
         let bytes = CryptoJS.AES.decrypt(accessToken, secretKey);
+    
+        if (!bytes || !bytes.toString) {
+            console.error("Decryption failed or resulted in an invalid value.");
+            return null;
+        }
+    
         let decryptToken = bytes.toString(CryptoJS.enc.Utf8);
+    
         return decryptToken;
     } catch (error) {
-        throw new Error('Failed to decrypt access token');
+        console.error("An error occurred:", error);
+        return null;
     }
 };
 

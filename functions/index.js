@@ -3,6 +3,7 @@ const functions = require('firebase-functions');
 const bodyParser = require('body-parser')
 const cors = require('cors')
 require("dotenv").config()
+const path = require('path');
 const { middleware, i18next } = require('./helpers/i18next');
 
 const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, checkOrderId, checkEmail, ZohoWebhook } = require('./Controller');
@@ -13,14 +14,16 @@ app.use(bodyParser.urlencoded({ extended: false }))
 
 app.use(
     cors({
-        origin: [
-            process.env.BASE_URL,
-            process.env.TEST_BASE_URL,
-            process.env.CO_BLOC_BASE_URL,
-            process.env.CO_BLOC_BASE_URL1,
-        ],
+      origin: [
+        process.env.BASE_URL,
+        process.env.TEST_BASE_URL,
+        process.env.CO_BLOC_BASE_URL,
+        process.env.CO_BLOC_BASE_URL1,
+      ],
     })
-);
+  );
+
+app.use(express.static(path.join(__dirname + '/public')));
 
 app.use(middleware.handle(i18next))
 
@@ -33,5 +36,6 @@ app.post('/Support', Support);
 app.get('/Token', RefreshAccessToken);
 app.post('/CheckOrderId', checkOrderId);
 app.post('/CheckEmail', checkEmail);
+app.post('/ZohoWebhook', ZohoWebhook);
 
 exports.app = functions.https.onRequest(app)

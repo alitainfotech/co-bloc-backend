@@ -12,5 +12,6 @@
     "FAILED_SUPPORT": "Fehler beim Erstellen des Supports in Zoho CRM",
     "ACCESS_TOKEN_ERROR": "Fehler beim Auffrischen des Zugriffstokens",
     "SUPPORT_MESSAGE": "Vielen Dank für Ihre Nachricht! Wir werden uns bald bei Ihnen melden! Haben Sie einen schönen Tag!",
-    "WRONG_ORDER":"Falsche Bestellnummer!"
+    "WRONG_ORDER":"Falsche Bestellnummer!",
+    "BAD_REQUEST": "Ungültige Anforderung! Bitte versuche es erneut!"
 }
