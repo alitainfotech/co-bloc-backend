@@ -12,5 +12,6 @@
   "FAILED_SUPPORT": "Failed to create Support in Zoho CRM",
   "ACCESS_TOKEN_ERROR": "Error refreshing access token",
   "SUPPORT_MESSAGE": "Thank you for getting in touch! We will get back in touch with you soon! Have a great day!",
-  "WRONG_ORDER": "Wrong order number!"
+  "WRONG_ORDER": "Wrong order number!",
+  "BAD_REQUEST": "Bad request! Please try again!"
 }

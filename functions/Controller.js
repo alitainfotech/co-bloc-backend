@@ -245,7 +245,7 @@ exports.Order = async (req, res) => {
                         CustomerName: orderData.Customer_Name.name,
                         LastName: orderData.Last_Name,
                         orderNumber: orderData.Order_Id,
-                        orderDate: orderData.Modified_Time,
+                        orderDate: orderData.Modified_Time.split('T')[0],
                         BillingStreet: orderData.Billing_Street,
                         BillingCity: orderData.Billing_City,
                         BillingCountry: orderData.Billing_Country,
@@ -278,7 +278,7 @@ exports.Order = async (req, res) => {
                         attachment: [
                             {
                                 data: pdfBuffer,
-                                filename: `${orderData.Order_Id}.pdf`,
+                                filename: `${orderData.Order_Id} Order Placed.pdf`,
                             },
                         ],
                     };
@@ -313,11 +313,11 @@ exports.Order = async (req, res) => {
                 const responseData = await commonFunForCatch(zohoApiBaseUrlforOrder, 'post', `${decryptToken}`, sanitizeHtml(JSON.stringify({ ...req.body, formData: FormData })));
                 return res.status(200).send(responseData);
             } catch (error) {
-                await dataSendWithMail(formData);
+                await dataSendWithMail(FormData);
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
             }
         } else {
-            await dataSendWithMail(formData);
+            await dataSendWithMail(FormData);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
