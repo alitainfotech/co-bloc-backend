@@ -15,5 +15,6 @@
   "ACCESS_TOKEN_ERROR":"Erreur lors de la mise à jour du jeton d'accès",
   "SUPPORT_MESSAGE" : "Merci de nous avoir contacté ! Nous vous répondrons bientôt ! Passez une excellente journée !",
 
-  "WRONG_ORDER":"Mauvais numéro de commande !"
+  "WRONG_ORDER":"Mauvais numéro de commande !",
+  "BAD_REQUEST": "Mauvaise demande! Veuillez réessayer!"
 }
