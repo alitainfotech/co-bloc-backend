@@ -3,6 +3,7 @@ const functions = require('firebase-functions');
 const bodyParser = require('body-parser')
 const cors = require('cors')
 require("dotenv").config()
+const path = require('path');
 const { middleware, i18next } = require('./helpers/i18next');
 
 const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, checkOrderId, checkEmail, ZohoWebhook } = require('./Controller');
@@ -22,7 +23,7 @@ app.use(
     })
   );
 
-app.use('/static', express.static(__dirname + '/public'));
+app.use(express.static(path.join(__dirname + '/public')));
 
 app.use(middleware.handle(i18next))
 

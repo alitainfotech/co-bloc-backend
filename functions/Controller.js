@@ -160,6 +160,8 @@ exports.Payment = async (req, res) => {
     try {
         const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
+        console.log("decryptToken====================>>>",decryptToken);
+
         const response = await axios.post(zohoApiBaseUrlforPayment, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
             headers: getZohoHeaders(decryptToken)
         });
@@ -226,71 +228,7 @@ exports.Order = async (req, res) => {
                     headers: getZohoHeaders(decryptToken)
                 });
 
-                if (getUserResponse.status === 200) {
-
-                    const userResponseData = getUserResponse.data;
-                    const orderData = userResponseData.data[0];
-
-                    const mailgun = new Mailgun(formData);
-                    const client = mailgun.client({
-                        username: process.env.MAILGUN_USERNAME,
-                        key: process.env.API_KEY,
-                        url: process.env.MAILGUN_URL
-                    });
-
-                    const htmlTemplatePath = path.join(__dirname, "./orderPlaced.ejs");
-                    const htmltemplateContent = fs.readFileSync(htmlTemplatePath, "utf8");
-
-                    const orderhtml = ejs.render(htmltemplateContent, {
-                        CustomerName: orderData.Customer_Name.name,
-                        LastName: orderData.Last_Name,
-                        OrderNumber: orderData.Order_Id,
-                        OrderDate: orderData.Modified_Time.split('T')[0],
-                        BillingStreet: orderData.Billing_Street,
-                        BillingCity: orderData.Billing_City,
-                        BillingCountry: orderData.Billing_Country,
-                        ProductName: orderData.Ordered_Items[0].Product_Name.name,
-                        Quantity: orderData.Ordered_Items[0].Quantity,
-                        ListPrice: orderData.Ordered_Items[0].List_Price,
-                        SubTotal: orderData.Sub_Total,
-                    })
-
-                    const browser = await puppeteer.launch({ headless: "new" });
-                    const page = await browser.newPage();
-                    await page.setContent(orderhtml);
-                    const pdfBuffer = await page.pdf();
-                    await browser.close();
-
-                    const orderTemplatePath = path.join(__dirname, "./orderPlacedtext.ejs");
-                    const ordertemplateContent = fs.readFileSync(orderTemplatePath, "utf8");
-                    const html = ejs.render(ordertemplateContent, {
-                        CustomerName: orderData.Customer_Name.name,
-                        LastName: orderData.Last_Name,
-                        SubTotal: orderData.Sub_Total,
-
-                    })
-
-                    const messageData = {
-                        from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
-                        to: orderData?.Email,
-                        subject: `New Order from Co-Bloc #${orderData.Order_Id}`,
-                        html: html,
-                        attachment: [
-                            {
-                                data: pdfBuffer,
-                                filename: `${orderData.Order_Id} Order Placed.pdf`,
-                            },
-                        ],
-                    };
-
-                    client.messages.create(process.env.DOMAIN, messageData)
-                        .then((response) => {
-                            console.log('Email sent successfully:', response);
-                        })
-                        .catch((err) => {
-                            console.log('Error sending email', err);
-                        })
-
+                if (getUserResponse.status === 200) {                    
                     return res.status(getUserResponse.status).send(getUserResponse.data);
                 } else {
                     return res.status(getUserResponse.status).json({ message: req.t("ORDER_FETCH_DATA_FAILED") });
