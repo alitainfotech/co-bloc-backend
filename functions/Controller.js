@@ -47,7 +47,6 @@ exports.RefreshAccessToken = async (req, res) => {
             },
         });
         const responseData = response.data;
-
         if (responseData.access_token) {
             const accessToken = responseData.access_token;
             let bcryptToken = CryptoJS.AES.encrypt(accessToken, process.env.SECRET_KEY).toString();
@@ -95,7 +94,6 @@ exports.addUser = async (req, res) => {
         });
 
         if (checkUserResponse.status !== 200) {
-
             const response = await axios.post(zohoApiBaseUrl, sanitizeHtml(JSON.stringify({ ...req.body, formData: formData })), {
                 headers: getZohoHeaders(decryptToken)
             });
@@ -120,7 +118,6 @@ exports.addUser = async (req, res) => {
             return res.status(checkUserResponse.status).json(checkUserResponse.data);
         }
     } catch (error) {
-        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -145,6 +142,7 @@ exports.addUser = async (req, res) => {
             }
         } else {
             await dataSendWithMail(formData)
+            console.log("error========>>", error);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -183,7 +181,6 @@ exports.Payment = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_PAYMENT") });
         }
     } catch (error) {
-        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -201,6 +198,7 @@ exports.Payment = async (req, res) => {
             }
         } else {
             await dataSendWithMail(formData);
+            console.log("error========>>", error);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -228,7 +226,7 @@ exports.Order = async (req, res) => {
                     headers: getZohoHeaders(decryptToken)
                 });
 
-                if (getUserResponse.status === 200) {                    
+                if (getUserResponse.status === 200) {
                     return res.status(getUserResponse.status).send(getUserResponse.data);
                 } else {
                     return res.status(getUserResponse.status).json({ message: req.t("ORDER_FETCH_DATA_FAILED") });
@@ -238,7 +236,7 @@ exports.Order = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
         }
     } catch (error) {
-        console.log("error========>>", error);
+        
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -256,6 +254,7 @@ exports.Order = async (req, res) => {
             }
         } else {
             await dataSendWithMail(FormData);
+            console.log("error========>>", error);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -360,7 +359,7 @@ exports.Invoice = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_INVOICE") });
         }
     } catch (error) {
-        console.log("error----------->", error);
+        
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -378,6 +377,7 @@ exports.Invoice = async (req, res) => {
             }
         } else {
             await dataSendWithMail(FormData);
+            console.log("error----------->", error);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -413,7 +413,6 @@ exports.Support = async (req, res) => {
         }
 
     } catch (error) {
-        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -429,6 +428,7 @@ exports.Support = async (req, res) => {
                 return res.status(500).json({ message: req.t("CATCH_ERROR") });
             }
         } else {
+            console.log("error========>>", error);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -453,7 +453,7 @@ exports.checkOrderId = async (req, res) => {
         }
 
     } catch (error) {
-        console.log("error========>>", error);
+        
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -472,6 +472,7 @@ exports.checkOrderId = async (req, res) => {
                 return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
             }
         } else {
+            console.log("error========>>", error);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -494,7 +495,6 @@ exports.checkEmail = async (req, res) => {
             return res.json({ status: 204, data: { isValid: false } });
         }
     } catch (error) {
-        console.log("error========>>", error);
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -513,6 +513,7 @@ exports.checkEmail = async (req, res) => {
                 return res.json({ status: 204, data: { isValid: false } });
             }
         } else {
+            console.log("error========>>", error);
             return res.status(500).json({ message: req.t("CATCH_ERROR") });
         }
     }
@@ -522,7 +523,7 @@ exports.ZohoWebhook = async (req, res) => {
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
     try {
         const orderId = req.body.OrderId;
-        if(!orderId) {
+        if (!orderId) {
             return res.status(400).json({ message: req.t("BAD_REQUEST") });
         }
         const newAccessToken = await refreshAccessToken();
@@ -538,9 +539,8 @@ exports.ZohoWebhook = async (req, res) => {
 
         const html = ejs.render(htmltemplateContent, {
             Customer_Name: responseData.Customer_Name.name,
-            Billing_Street: responseData.Billing_Street,
-            Billing_City: responseData.Billing_City,
-            Billing_Country: responseData.Billing_Country,
+            Order_Number: responseData.Order_Id,
+            Total_Amount: responseData.Grand_Total
         })
 
         const mailgun = new Mailgun(formData);
@@ -553,7 +553,7 @@ exports.ZohoWebhook = async (req, res) => {
         const messageData = {
             from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
             to: responseData.Email,
-            subject: `Order Shipment Notification for Your Co-bloc Game`,
+            subject: `Co-Bloc Order Confirmation - Order ID: ${orderId}`,
             html: html
         }
 

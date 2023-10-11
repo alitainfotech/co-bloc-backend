@@ -75,11 +75,11 @@ const refreshAccessToken = async () => {
             return bcryptToken
         } else {
             console.error('Error refreshing access token. Response:', responseData);
-            res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") })
+            throw new Error('Error refreshing access token');
         }
     } catch (error) {
         console.error('Error refreshing access token:', error);
-        res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") })
+        throw new Error('Error refreshing access token');
     }
 }
 
