@@ -539,8 +539,9 @@ exports.ZohoWebhook = async (req, res) => {
 
         const html = ejs.render(htmltemplateContent, {
             Customer_Name: responseData.Customer_Name.name,
-            Order_Number: responseData.Order_Id,
-            Total_Amount: responseData.Grand_Total
+            Billing_Street: responseData.Billing_Street,
+            Billing_City: responseData.Billing_City,
+            Billing_Country: responseData.Billing_Country,
         })
 
         const mailgun = new Mailgun(formData);
@@ -553,7 +554,7 @@ exports.ZohoWebhook = async (req, res) => {
         const messageData = {
             from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
             to: responseData.Email,
-            subject: `Co-Bloc Order Confirmation - Order ID: ${orderId}`,
+            subject: `Order Shipment Notification for Your Co-bloc Game`,
             html: html
         }
 
