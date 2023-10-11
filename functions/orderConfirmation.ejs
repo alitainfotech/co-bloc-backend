@@ -12,8 +12,7 @@
         <tr>
             <td colspan="4" style="text-align: left; background-color: #fff">
                 <span>
-                    <img src="https://us-central1-co-bloc-backend-91ed7.cloudfunctions.net/app/images/co-bloc-logo.jpg"
-                        alt="co-bloc logo">
+                    <img src="https://us-central1-co-bloc-backend-91ed7.cloudfunctions.net/app/images/co-bloc-logo.jpg" alt="co-bloc logo">
                 </span>
             </td>
         </tr>
@@ -27,21 +26,90 @@
 
                 <div>
                     <p>Dear <%= Customer_Name %>,</p>
-                    <p>We are pleased to inform you that your recent order with Co-Bloc has been successfully processed
-                        and confirmed. Your order details are as follows:</p>
+                    <p>Thank you for purchasing Co-bloc game. This email is to inform you that your order has been
+                        dispatched
+                        and will be delivered in the next 3 to 5 working days to the following address:</p>
+                </div>                
+                
+                <table style="width:100%; border:0;">
+                    <tr>
+                        <td style="width:70%">
+                            
+                        </td>
+                        <td>
+                            <div>
+                    <h6 style="
+                        margin: 0;
+                        color: #000;
+                        font-family: Poppins;
+                        font-size: 18px;
+                        font-style: normal;
+                        font-weight: 600; 
+                        margin-bottom: 0 !important;
+                        padding-bottom: 8px;
+                        ">
+                        Billing Address
+                    </h6>
+                    <h6 style="
+                        margin: 0;
+                        color: #676363;
+                        font-family: Poppins;
+                        font-size: 15px;
+                        font-style: normal;
+                        font-weight: 700;
+                        margin-bottom: 0 !important;
+                        padding-bottom: 10px;
+                        ">
+                        <%= Customer_Name %>
+                    </h6>
+                    <p style="
+                        color: #a5aaba;
+                        font-family: Poppins;
+                        font-size: 14px;
+                        font-style: normal;
+                        font-weight: 500;
+                        list-style: none;
+                        margin-bottom: 5px;
+                        margin-top: 0;
+                        ">
+                        Street : <%= Billing_Street %>
+                    </p>
+                    <p style="
+                        color: #a5aaba;
+                        font-family: Poppins;
+                        font-size: 14px;
+                        font-style: normal;
+                        font-weight: 500;
+                        list-style: none;
+                        margin-bottom: 0 !important;
+                        margin: 0;
+                        ">
+                        City : <%= Billing_City %>
+                    </p>
+                    <p style="
+                        color: #a5aaba;
+                        font-family: Poppins;
+                        font-size: 14px;
+                        font-style: normal;
+                        font-weight: 500;
+                        list-style: none;
+                        margin-bottom: 0 !important;
+                        margin: 0;
+                        ">
+                        Country : <%= Billing_Country %>
+                    </p>
                 </div>
-
-                <div>
-                    <p>Order No: <%=Order_Number %></p>
-                    <p>Total Amount Due: €<%=Total_Amount  %></p>
+                        </td>
+                    </tr>
+                </table>
+                <p>Best regards,</p>
+                <p>Co bloc</p><br>
+                <div class="note">
+                    <p><em>Note:</em> This email has been automatically generated. Please do not reply. If you have any
+                        questions, please visit our <a href="https://co-bloc.fr/get-in-touch.html">support center</a>.
+                    </p>
                 </div>
-
-                <p>We appreciate your trust in Co-Bloc for your purchase. Our team is now working diligently to process and prepare your order for shipment.</p>
-                <p>Thank you for choosing Co-Bloc. We look forward to serving you again in the future.</p>
-                <p>Sincerely,</p>
-                <p>[Co bloc]</p><br>
-                <table
-                    style="width: 100%; max-width: 800px; margin: 0 auto; position: relative; bottom: 20px; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">
+                <table style="width: 100%; max-width: 800px; margin: 0 auto; position: relative; bottom: 20px; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);">
                     <tr style="padding: 10px 0">
                         <td style="padding: 10px; width: 300px">
                             <p style="text-align:center; padding:10px">
