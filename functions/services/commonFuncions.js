@@ -181,6 +181,10 @@ const dataSendWithMail = async (FormData) => {
         <li><strong>Billing City:</strong> ${FormData?.Billing_City}</li>
         <li><strong>Billing Street:</strong> ${FormData?.Billing_Street}</li>
         <li><strong>Billing Code:</strong> ${FormData?.Billing_Code}</li>
+        <li><strong>Shipping Country:</strong> ${FormData?.Shipping_Country}</li>
+        <li><strong>Shipping City:</strong> ${FormData?.Shipping_City}</li>
+        <li><strong>Shipping Street:</strong> ${FormData?.Shipping_Street}</li>
+        <li><strong>Shipping Code:</strong> ${FormData?.Shipping_Code}</li>
     </ul>
 
         <h1><strong>Payment Information:</strong></h1>
@@ -200,6 +204,10 @@ const dataSendWithMail = async (FormData) => {
         <li><strong>Billing City:</strong> ${FormData?.Billing_City}</li>
         <li><strong>Billing Street:</strong> ${FormData?.Billing_Street}</li>
         <li><strong>Billing Code:</strong> ${FormData?.Billing_Code}</li>
+        <li><strong>Shipping Country:</strong> ${FormData?.Shipping_Country} </li>
+        <li><strong>Shipping City:</strong> ${FormData?.Shipping_City}</li>
+        <li><strong>Shipping Street:</strong> ${FormData?.Shipping_Street}</li>
+        <li><strong>Shipping Code:</strong> ${FormData?.Shipping_Code}</li>
         <li><strong>Quantity:</strong> ${FormData?.Invoiced_Items[0]?.Quantity}</li>
         <li><strong>Subject:</strong> ${FormData?.Subject}</li>
         <li><strong>Account Name:</strong> ${FormData?.Account_Name}</li>
