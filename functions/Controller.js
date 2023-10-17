@@ -236,7 +236,7 @@ exports.Order = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
         }
     } catch (error) {
-        
+
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -284,18 +284,22 @@ exports.Invoice = async (req, res) => {
                 if (getUserResponse.status === 200 || getUserResponse.status === 201) {
                     const userResponseData = getUserResponse.data;
                     const invoiceData = userResponseData.data[0];
+
                     const mailgun = new Mailgun(formData);
                     const client = mailgun.client({
                         username: process.env.MAILGUN_USERNAME,
                         key: process.env.API_KEY,
                         url: process.env.MAILGUN_URL
                     });
+
                     const ejsTemplatePath = path.join(__dirname, "./pdfIndex.ejs");
                     const templateContent = fs.readFileSync(ejsTemplatePath, "utf8");
                     const renderedHtml = ejs.render(templateContent, {
                         Invoices: {
                             CustomerName: invoiceData.First_Name.name,
                             LastName: invoiceData.Last_Name,
+                            ShippingFirstName: invoiceData.Shipping_First_Name1,
+                            ShippingLastName: invoiceData.Shipping_Last_Name,
                             InvoiceDate: invoiceData.Invoice_Date,
                             InvoiceNumber: invoiceData.Invoice_Number,
                             BillingStreet: invoiceData.Billing_Street,
@@ -303,6 +307,10 @@ exports.Invoice = async (req, res) => {
                             BillingProvince: invoiceData.Billing_State,
                             BillingCountry: invoiceData.Billing_Country,
                             BillingCode: invoiceData.Billing_Code,
+                            ShippingStreet: invoiceData.Shipping_Street,
+                            ShippingCity: invoiceData.Shipping_City,
+                            ShippingCountry: invoiceData.Shipping_Country,
+                            ShippingCode: invoiceData.Shipping_Code,
                             Status: invoiceData.Status,
                             ProductName: invoiceData.Invoiced_Items[0].Product_Name.name,
                             Quantity: invoiceData.Invoiced_Items[0].Quantity,
@@ -314,6 +322,7 @@ exports.Invoice = async (req, res) => {
                             GrandTotal: invoiceData.Grand_Total
                         }
                     });
+
                     const browser = await puppeteer.launch({ headless: "new" });
                     const page = await browser.newPage();
                     await page.setContent(renderedHtml);
@@ -342,6 +351,7 @@ exports.Invoice = async (req, res) => {
                             },
                         ],
                     };
+
                     client.messages.create(process.env.DOMAIN, messageData)
                         .then((response) => {
                             console.log('Email sent successfully:', response);
@@ -359,7 +369,6 @@ exports.Invoice = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_INVOICE") });
         }
     } catch (error) {
-        
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -453,7 +462,7 @@ exports.checkOrderId = async (req, res) => {
         }
 
     } catch (error) {
-        
+
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -542,6 +551,10 @@ exports.ZohoWebhook = async (req, res) => {
             Billing_Street: responseData.Billing_Street,
             Billing_City: responseData.Billing_City,
             Billing_Country: responseData.Billing_Country,
+            ShippingFirstName: responseData.Shipping_First_Name,
+            ShippingStreet: responseData.Shipping_Street,
+            ShippingCity: responseData.Shipping_City,
+            ShippingCountry: responseData.Shipping_Country,
         })
 
         const mailgun = new Mailgun(formData);
