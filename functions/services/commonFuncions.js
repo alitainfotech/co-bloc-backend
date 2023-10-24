@@ -3,6 +3,7 @@ const axios = require("axios");
 const { REFRESH_TOKEN } = require("../commonConstant");
 const Mailgun = require('mailgun.js');
 const formData = require('form-data');
+const { RateLimiterMemory } = require("rate-limiter-flexible");
 require("dotenv").config()
 
 
@@ -17,21 +18,21 @@ const truncateToDecimals = (num, dec = 2) => {
 const decryptAccessToken = async (data, secretKey) => {
     try {
         let accessToken = (data && data.headers) ? data.headers.authorization.split(" ")[1] : data;
-    
+
         if (!accessToken) {
             console.error("Access token is empty or undefined.");
             return null;
         }
-    
+
         let bytes = CryptoJS.AES.decrypt(accessToken, secretKey);
-    
+
         if (!bytes || !bytes.toString) {
             console.error("Decryption failed or resulted in an invalid value.");
             return null;
         }
-    
+
         let decryptToken = bytes.toString(CryptoJS.enc.Utf8);
-    
+
         return decryptToken;
     } catch (error) {
         console.error("An error occurred:", error);
@@ -134,10 +135,10 @@ const sanitizeHtml = (html) => {
         oldHtml = html;
         html = html.replace(tagOrComment, '');
         html = html.replace(/alert\('(.+?)'\)/g, '$1');
+        html = html.replace(/https?:\/\/[^\s<>"]+/g, "");
     } while (html !== oldHtml);
     return html.replace(/</g, '&lt;');
 };
-
 
 const dataSendWithMail = async (FormData) => {
     const mailgun = new Mailgun(formData);
@@ -175,6 +176,8 @@ const dataSendWithMail = async (FormData) => {
 
         <h1><strong>Order Information:</strong></h1>
     <ul>
+        <li><strong>First Name:</strong> ${FormData?.Shipping_First_Name}</li>
+        <li><strong>Last Name:</strong> ${FormData?.Shipping_Last_Name}</li>
         <li><strong>Quantity:</strong> ${FormData?.Ordered_Items[0]?.Quantity}</li>
         <li><strong>Payment Currency:</strong> ${FormData?.Payment_Currency}</li>
         <li><strong>Billing Country:</strong> ${FormData?.Billing_Country}</li>
@@ -230,6 +233,24 @@ const dataSendWithMail = async (FormData) => {
         })
 }
 
+
+// Create a rate limiter middleware function
+
+const limiter = new RateLimiterMemory({
+    points: 100,
+    duration: 1,
+});
+
+const rateLimiterMiddleware = (req, res, next) => {
+    limiter.consume(req.ip)
+        .then(() => {
+            next();
+        })
+        .catch(() => {
+            return res.status(429).json({ message: "Too Many Requests" });
+        });
+};
+
 module.exports = {
     decryptAccessToken,
     getZohoHeaders,
@@ -237,5 +258,6 @@ module.exports = {
     commonFunForCatch,
     sanitizeHtml,
     truncateToDecimals,
-    dataSendWithMail
+    dataSendWithMail,
+    rateLimiterMiddleware
 }
