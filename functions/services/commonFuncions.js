@@ -135,7 +135,6 @@ const sanitizeHtml = (html) => {
         oldHtml = html;
         html = html.replace(tagOrComment, '');
         html = html.replace(/alert\('(.+?)'\)/g, '$1');
-        html = html.replace(/https?:\/\/[^\s<>"]+/g, "");
     } while (html !== oldHtml);
     return html.replace(/</g, '&lt;');
 };

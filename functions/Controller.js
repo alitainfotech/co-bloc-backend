@@ -394,15 +394,9 @@ exports.Support = async (req, res) => {
     try {
         const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
-        const message = sanitizeHtml(JSON.stringify(req.body))
-
-        if (JSON.parse(message).data[0].Message === "") {
-            return res.json({ message: "Url or Link not Supported in this form." })
-        }
-        const response = await axios.post(zohoApiBaseUrlForSupport, {
+        const response = await axios.post(zohoApiBaseUrlForSupport, sanitizeHtml(JSON.stringify(req.body)), {
             headers: getZohoHeaders(decryptToken)
         });
-
         if (response.status === 200 || response.status === 201) {
             const responseData = response.data;
             if (responseData && responseData.data && responseData.data[0].details.id) {
