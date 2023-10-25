@@ -80,7 +80,6 @@ exports.Pay = async (req, res) => {
 
 
 exports.addUser = async (req, res) => {
-
     const zohoApiBaseUrl = `${process.env.ZOHO_CRM_V2_URL}/Customer`;
 
     const userData = req.body.data[0];
@@ -150,7 +149,6 @@ exports.addUser = async (req, res) => {
 
 
 exports.Payment = async (req, res) => {
-
     const zohoApiBaseUrlforPayment = `${process.env.ZOHO_CRM_V2_URL}/Payment`;
 
     const userData = req.body.data[0];
@@ -205,7 +203,6 @@ exports.Payment = async (req, res) => {
 };
 
 exports.Order = async (req, res) => {
-
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
 
     const userData = req.body.data[0];
@@ -236,7 +233,6 @@ exports.Order = async (req, res) => {
             return res.status(response.status).json({ message: req.t("FAILED_ORDER") });
         }
     } catch (error) {
-
         if (
             error.response &&
             STATUS_CODE.includes(error.response.status) &&
@@ -261,7 +257,6 @@ exports.Order = async (req, res) => {
 };
 
 exports.Invoice = async (req, res) => {
-
     const zohoApiBaseUrlforInvoice = `${process.env.ZOHO_CRM_V5_URL}/Invoices`;
 
     const userData = req.body.data[0];
@@ -445,7 +440,6 @@ exports.Support = async (req, res) => {
 
 
 exports.checkOrderId = async (req, res) => {
-
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
 
     try {
