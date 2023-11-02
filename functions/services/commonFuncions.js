@@ -4,6 +4,10 @@ const { REFRESH_TOKEN } = require("../commonConstant");
 const Mailgun = require('mailgun.js');
 const formData = require('form-data');
 const { RateLimiterMemory } = require("rate-limiter-flexible");
+const path = require("path");
+const fs = require('fs');
+const ejs = require("ejs")
+const puppeteer = require("puppeteer");
 require("dotenv").config()
 
 
@@ -250,6 +254,49 @@ const rateLimiterMiddleware = (req, res, next) => {
         });
 };
 
+// Generate Invoice PDF
+
+const generateInvoicePDF = async (invoiceData) => {
+    const ejsTemplatePath = path.join(__dirname, "../pdfIndex.ejs");
+    const templateContent = fs.readFileSync(ejsTemplatePath, "utf8");
+    const renderedHtml = ejs.render(templateContent, {
+        Invoices: {
+            CustomerName: invoiceData.First_Name.name,
+            LastName: invoiceData.Last_Name,
+            ShippingFirstName: invoiceData.Shipping_First_Name1,
+            ShippingLastName: invoiceData.Shipping_Last_Name,
+            InvoiceDate: invoiceData.Invoice_Date,
+            InvoiceNumber: invoiceData.Invoice_Number,
+            BillingStreet: invoiceData.Billing_Street,
+            BillingCity: invoiceData.Billing_City,
+            BillingProvince: invoiceData.Billing_State,
+            BillingCountry: invoiceData.Billing_Country,
+            BillingCode: invoiceData.Billing_Code,
+            ShippingStreet: invoiceData.Shipping_Street,
+            ShippingCity: invoiceData.Shipping_City,
+            ShippingCountry: invoiceData.Shipping_Country,
+            ShippingCode: invoiceData.Shipping_Code,
+            Status: invoiceData.Status,
+            ProductName: invoiceData.Invoiced_Items[0].Product_Name.name,
+            Quantity: invoiceData.Invoiced_Items[0].Quantity,
+            Tax: invoiceData.Invoiced_Items[0].Tax,
+            ListPrice: invoiceData.Invoiced_Items[0].List_Price,
+            Price: invoiceData.Invoiced_Items[0].Total,
+            Amount: invoiceData.Invoiced_Items[0].List_Price,
+            SubTotal: invoiceData.Sub_Total,
+            GrandTotal: invoiceData.Grand_Total
+        }
+    });
+
+    const browser = await puppeteer.launch({ headless: "new" });
+    const page = await browser.newPage();
+    await page.setContent(renderedHtml);
+    const pdfBuffer = await page.pdf();
+    await browser.close();
+
+    return pdfBuffer;
+}
+
 module.exports = {
     decryptAccessToken,
     getZohoHeaders,
@@ -258,5 +305,6 @@ module.exports = {
     sanitizeHtml,
     truncateToDecimals,
     dataSendWithMail,
-    rateLimiterMiddleware
+    rateLimiterMiddleware,
+    generateInvoicePDF
 }
