@@ -547,7 +547,7 @@ exports.ZohoWebhook = async (req, res) => {
     }
 };
 
-exports.InvoiceForThanksPage = async (req, res) => {
+exports.DownloadInvoice  = async (req, res) => {
     const zohoApiBaseUrlforInvoice = `${process.env.ZOHO_CRM_V5_URL}/Invoices`;
 
     try {

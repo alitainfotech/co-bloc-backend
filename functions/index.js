@@ -6,7 +6,7 @@ require("dotenv").config()
 const path = require('path');
 const { middleware, i18next } = require('./helpers/i18next');
 
-const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, checkOrderId, checkEmail, ZohoWebhook, InvoiceForThanksPage } = require('./Controller');
+const { addUser, Pay, Payment, Order, Invoice, Support, RefreshAccessToken, checkOrderId, checkEmail, ZohoWebhook, DownloadInvoice,  } = require('./Controller');
 const { rateLimiterMiddleware } = require('./services/commonFuncions');
 
 const app = express()
@@ -40,6 +40,6 @@ app.get('/Token', RefreshAccessToken);
 app.post('/CheckOrderId', checkOrderId);
 app.post('/CheckEmail', checkEmail);
 app.post('/ZohoWebhook', ZohoWebhook);
-app.post('/InvoiceForThanksPage', InvoiceForThanksPage);
+app.post('/InvoiceForThanksPage', DownloadInvoice);
 
 exports.app = functions.https.onRequest(app)
