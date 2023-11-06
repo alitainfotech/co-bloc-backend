@@ -297,6 +297,16 @@ const generateInvoicePDF = async (invoiceData) => {
     return pdfBuffer;
 }
 
+const sendEmail = (client, messageData, successMessage) => {
+    client.messages.create(process.env.DOMAIN, messageData)
+        .then((response) => {
+            console.log(successMessage, response);
+        })
+        .catch((err) => {
+            console.log('Error sending email', err);
+        });
+}
+
 module.exports = {
     decryptAccessToken,
     getZohoHeaders,
@@ -306,5 +316,6 @@ module.exports = {
     truncateToDecimals,
     dataSendWithMail,
     rateLimiterMiddleware,
-    generateInvoicePDF
+    generateInvoicePDF,
+    sendEmail
 }
