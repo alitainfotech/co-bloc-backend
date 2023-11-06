@@ -22,7 +22,8 @@ const {
     truncateToDecimals,
     sanitizeHtml,
     dataSendWithMail,
-    generateInvoicePDF
+    generateInvoicePDF,
+    sendEmail
 } = require('./services/commonFuncions');
 
 
@@ -405,13 +406,15 @@ exports.Support = async (req, res) => {
 };
 
 
-exports.checkOrderId = async (req, res) => {
+exports.checkOrderIdandSONumber = async (req, res) => {
     const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
 
     try {
         const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
-        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
+        const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
+
+        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=${searchCriteria}`, {
             headers: getZohoHeaders(decryptToken)
         });
         if (checkUserResponse.status === 200) {
@@ -431,7 +434,9 @@ exports.checkOrderId = async (req, res) => {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
-            const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
+            const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
+
+            const checkUserResponse = await axios.get(`${zohoApiBaseUrlforOrder}/search?criteria=${searchCriteria}`, {
                 headers: getZohoHeaders(decryptToken)
             });
 
@@ -503,6 +508,8 @@ exports.ZohoWebhook = async (req, res) => {
         });
         const responseData = response.data.data[0]
 
+
+        // Order Confirmation EJS
         const htmlTemplatePath = path.join(__dirname, "./orderConfirmation.ejs");
         const htmltemplateContent = fs.readFileSync(htmlTemplatePath, "utf8");
 
@@ -517,13 +524,6 @@ exports.ZohoWebhook = async (req, res) => {
             ShippingCountry: responseData.Shipping_Country,
         })
 
-        const mailgun = new Mailgun(formData);
-        const client = mailgun.client({
-            username: process.env.MAILGUN_USERNAME,
-            key: process.env.API_KEY,
-            url: process.env.MAILGUN_URL
-        });
-
         const messageData = {
             from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
             to: responseData.Email,
@@ -531,15 +531,50 @@ exports.ZohoWebhook = async (req, res) => {
             html: html
         }
 
-        client.messages.create(process.env.DOMAIN, messageData)
-            .then((response) => {
-                console.log('Email sent successfully:', response);
-            })
-            .catch((err) => {
-                console.log('Error sending email', err);
-            })
+        // Order Shipping Sticker EJS
+        const htmlTemplatePathForShipping = path.join(__dirname, "./shippingSticker.ejs");
+        const htmltemplateContentForShipping = fs.readFileSync(htmlTemplatePathForShipping, "utf8");
 
-        return res.status(200).send('Email sent successfully');
+        const htmlForShipping = ejs.render(htmltemplateContentForShipping, {
+            Customer_Name: responseData.Customer_Name.name,
+            Billing_Street: responseData.Billing_Street,
+            Billing_City: responseData.Billing_City,
+            ShippingFirstName: responseData.Shipping_First_Name,
+            ShippingStreet: responseData.Shipping_Street,
+            ShippingCity: responseData.Shipping_City,
+            OrderNumber: responseData.Order_Id
+        })
+
+        const browser = await puppeteer.launch({ headless: "new" });
+        const page = await browser.newPage();
+        await page.setContent(htmlForShipping);
+        const pdfBuffer = await page.pdf();
+        await browser.close();
+
+        const mailgun = new Mailgun(formData);
+        const client = mailgun.client({
+            username: process.env.MAILGUN_USERNAME,
+            key: process.env.API_KEY,
+            url: process.env.MAILGUN_URL
+        });
+
+        const messageDataForShipping = {
+            from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
+            to: "info@entertainment-lab.fr",
+            subject: `Order Shipping Sticker Notification`,
+            html: 'Your shipping notification message',
+            attachment: [
+                {
+                    data: pdfBuffer,
+                    filename: `${responseData?.Order_Id} Order Shipping.pdf`,
+                },
+            ],
+        }
+
+        await sendEmail(client, messageData, 'Email sent successfully:');
+        await sendEmail(client, messageDataForShipping, 'Shipping email sent successfully:');
+
+        return res.status(200).send('Emails sent successfully');
     }
     catch (error) {
         console.log("***************** Order send webshook error: *******************", error);
@@ -547,13 +582,15 @@ exports.ZohoWebhook = async (req, res) => {
     }
 };
 
-exports.DownloadInvoice  = async (req, res) => {
+exports.DownloadInvoice = async (req, res) => {
     const zohoApiBaseUrlforInvoice = `${process.env.ZOHO_CRM_V5_URL}/Invoices`;
 
     try {
         const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
 
-        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforInvoice}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
+        const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
+
+        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforInvoice}/search?criteria=${searchCriteria}`, {
             headers: getZohoHeaders(decryptToken)
         });
         if (checkUserResponse.status === 200) {
@@ -595,7 +632,9 @@ exports.DownloadInvoice  = async (req, res) => {
             const newAccessToken = await refreshAccessToken();
             const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
 
-            const checkUserResponse = await axios.get(`${zohoApiBaseUrlforInvoice}/search?criteria=(Order_Id:equals:${req.body.order_id})`, {
+            const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
+
+            const checkUserResponse = await axios.get(`${zohoApiBaseUrlforInvoice}/search?criteria=${searchCriteria}`, {
                 headers: getZohoHeaders(decryptToken)
             });
 
