@@ -515,10 +515,12 @@ exports.ZohoWebhook = async (req, res) => {
 
         const html = ejs.render(htmltemplateContent, {
             Customer_Name: responseData.Customer_Name.name,
+            Customer_Last_Name: responseData.Customer_Last_Name,
             Billing_Street: responseData.Billing_Street,
             Billing_City: responseData.Billing_City,
             Billing_Country: responseData.Billing_Country,
             ShippingFirstName: responseData.Shipping_First_Name,
+            ShippingLastName: responseData.Shipping_Last_Name,
             ShippingStreet: responseData.Shipping_Street,
             ShippingCity: responseData.Shipping_City,
             ShippingCountry: responseData.Shipping_Country,
@@ -537,9 +539,11 @@ exports.ZohoWebhook = async (req, res) => {
 
         const htmlForShipping = ejs.render(htmltemplateContentForShipping, {
             Customer_Name: responseData.Customer_Name.name,
+            Customer_Last_Name: responseData.Customer_Last_Name,
             Billing_Street: responseData.Billing_Street,
             Billing_City: responseData.Billing_City,
             ShippingFirstName: responseData.Shipping_First_Name,
+            ShippingLastName: responseData.Shipping_Last_Name,
             ShippingStreet: responseData.Shipping_Street,
             ShippingCity: responseData.Shipping_City,
             OrderNumber: responseData.Order_Id
