@@ -63,13 +63,13 @@
                         </tr>
                         <tr>
                             <td style="border-bottom:1px solid #000; padding:10px 0 10px 28%; color:#000; font-size:16px; line-height:20px;">
-                                <% if(ShippingFirstName && ShippingStreet && ShippingCity) { %>
+                                <% if(ShippingFirstName && ShippingLastName && ShippingStreet && ShippingCity) { %>
                                 <table border="0" width="100%" cellspacing="0" cellpadding="0" style="margin:0 auto;">
                                     <tr>
                                         <td style="padding:0 0 5px; font-weight:bold; font-size:16px;">To:</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding:0 0 5px; font-weight:bold; font-size:20px;"><%= ShippingFirstName  %></td>
+                                        <td style="padding:0 0 5px; font-weight:bold; font-size:20px;"><%= ShippingFirstName  %> <%= ShippingLastName %> </td>
                                     </tr>
                                     <tr>
                                         <td style="font-weight:normal;"><%= ShippingStreet  %></td>
@@ -84,7 +84,7 @@
                                             <td style="padding:0 0 5px; font-weight:bold; font-size:16px;">To:</td>
                                         </tr>
                                         <tr>
-                                            <td style="padding:0 0 5px; font-weight:bold; font-size:20px;"><%= Customer_Name  %></td>
+                                            <td style="padding:0 0 5px; font-weight:bold; font-size:20px;"><%= Customer_Name  %> <%= Customer_Last_Name %></td>
                                         </tr>
                                         <tr>
                                             <td style="font-weight:normal;"><%= Billing_Street  %></td>

@@ -25,7 +25,7 @@
         <tr>
             <td>
                 <div>
-                    <p>Dear <%= ShippingFirstName ? ShippingFirstName : Customer_Name %>,</p>
+                  <p>Dear <%= ((ShippingFirstName && ShippingLastName) ? (ShippingFirstName + ' ' + ShippingLastName) : (Customer_Name + ' ' + (Customer_Last_Name ? Customer_Last_Name : ''))) %>,</p>
                     <p>Thank you for purchasing Co-bloc game. This email is to inform you that your order has been
                         dispatched
                         and will be delivered in the next 3 to 5 working days to the following address:</p>
@@ -43,7 +43,7 @@
                                                   <tbody>                                          
                                                      <tr>
                                                         <td>
-                                                         <% if(ShippingFirstName && ShippingStreet && ShippingCity && ShippingCountry) { %>
+                                                         <% if(ShippingFirstName && ShippingLastName && ShippingStreet && ShippingCity && ShippingCountry) { %>
                                                            <h6 style="
                                                            margin: 0;
                                                            color: #000;
@@ -66,7 +66,7 @@
                                                            margin-bottom: 0 !important;
                                                            padding-bottom: 10px;
                                                            ">
-                                                           <%= ShippingFirstName %>
+                                                           <%= ShippingFirstName %> <%= ShippingLastName %>
                                                         </h6>
                                                         <p style="
                                                            color: #a5aaba;
@@ -137,7 +137,7 @@
                                                               margin-bottom: 0 !important;
                                                               padding-bottom: 10px;
                                                               ">
-                                                              <%= Customer_Name %>
+                                                              <%= Customer_Name %> <%= Customer_Last_Name  %>
                                                            </h6>
                                                            <p style="
                                                               color: #a5aaba;
