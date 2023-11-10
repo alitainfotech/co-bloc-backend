@@ -291,6 +291,10 @@ exports.Invoice = async (req, res) => {
 
                     const pdfBuffer = await generateInvoicePDF(invoiceData);
 
+                    const pdfFileName = `${invoiceData?.Invoice_Number}.pdf`;
+
+                    const pdfBase64 = pdfBuffer.toString("base64");
+
                     const htmlTemplatePath = path.join(__dirname, "./pdfIndextext.ejs");
                     const htmltemplateContent = fs.readFileSync(htmlTemplatePath, "utf8");
                     const html = ejs.render(htmltemplateContent, {
@@ -314,14 +318,20 @@ exports.Invoice = async (req, res) => {
                         ],
                     };
 
+                    const responseObj = {
+                        ...getUserResponse.data,
+                        pdfBase64: pdfBase64,
+                        pdfFileName: pdfFileName
+                    };
+
                     client.messages.create(process.env.DOMAIN, messageData)
                         .then((response) => {
                             console.log('Email sent successfully:', response);
-                            return res.status(getUserResponse.status).send(getUserResponse.data);
+                            return res.status(getUserResponse.status).send(responseObj);
                         })
                         .catch((err) => {
                             console.log('Error sending email', err);
-                            return res.status(getUserResponse.status).send(getUserResponse.data);
+                            return res.status(getUserResponse.status).send(responseObj);
                         })
                 } else {
                     return res.status(getUserResponse.status).json({ message: req.t("INVOICE_FETCH_DATA_FAILED") });
@@ -441,7 +451,7 @@ exports.checkOrderIdandSONumber = async (req, res) => {
             });
 
             if (checkUserResponse.status === 200 || checkUserResponse.status === 201) {
-                return res.json({ status: 200, data: checkUserResponse?.data?.data[0].Order_Id });
+                return res.json({ status: 200, data: { Order_Id: checkUserResponse?.data?.data[0].Order_Id } });
             } else {
                 return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
             }
@@ -585,97 +595,3 @@ exports.ZohoWebhook = async (req, res) => {
         return res.status(500).json({ message: req.t("CATCH_ERROR") });
     }
 };
-
-exports.DownloadInvoice = async (req, res) => {
-    const zohoApiBaseUrlforInvoice = `${process.env.ZOHO_CRM_V5_URL}/Invoices`;
-
-    try {
-        const decryptToken = await decryptAccessToken(req, process.env.SECRET_KEY);
-
-        const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
-
-        const checkUserResponse = await axios.get(`${zohoApiBaseUrlforInvoice}/search?criteria=${searchCriteria}`, {
-            headers: getZohoHeaders(decryptToken)
-        });
-        if (checkUserResponse.status === 200) {
-            const responseData = checkUserResponse.data;
-            if (responseData && responseData.data && responseData.data[0].id) {
-                const userId = responseData.data[0].id;
-                const getUserUrl = `${zohoApiBaseUrlforInvoice}/${userId}`;
-                const getUserResponse = await axios.get(getUserUrl, {
-                    headers: getZohoHeaders(decryptToken)
-                });
-                if (getUserResponse.status === 200) {
-                    const userResponseData = getUserResponse.data;
-                    const invoiceData = userResponseData.data[0];
-
-                    const pdfBuffer = await generateInvoicePDF(invoiceData);
-
-                    const pdfFileName = `${invoiceData?.Invoice_Number}.pdf`;
-
-                    const pdfBase64 = pdfBuffer.toString("base64");
-
-                    return res.json({
-                        status: getUserResponse.status,
-                        message: "Invoice PDF generate successfully",
-                        data: { pdfBase64, pdfFileName }
-                    });
-                } else {
-                    return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
-                }
-            }
-        } else {
-            return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
-        }
-    } catch (error) {
-        if (
-            error.response &&
-            STATUS_CODE.includes(error.response.status) &&
-            STATUS_ERROR.includes(error.response.data.code)
-        ) {
-            const newAccessToken = await refreshAccessToken();
-            const decryptToken = await decryptAccessToken(newAccessToken, process.env.SECRET_KEY);
-
-            const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
-
-            const checkUserResponse = await axios.get(`${zohoApiBaseUrlforInvoice}/search?criteria=${searchCriteria}`, {
-                headers: getZohoHeaders(decryptToken)
-            });
-
-            if (checkUserResponse.status === 200 || checkUserResponse.status === 201) {
-                const responseData = checkUserResponse.data;
-                if (responseData && responseData.data && responseData.data[0].id) {
-                    const userId = responseData.data[0].id;
-                    const getUserUrl = `${zohoApiBaseUrlforInvoice}/${userId}`;
-                    const getUserResponse = await axios.get(getUserUrl, {
-                        headers: getZohoHeaders(decryptToken)
-                    });
-                    if (getUserResponse.status === 200) {
-                        const userResponseData = getUserResponse.data;
-                        const invoiceData = userResponseData.data[0];
-
-                        const pdfBuffer = await generateInvoicePDF(invoiceData);
-
-                        const pdfFileName = `${invoiceData?.Invoice_Number}.pdf`;
-
-                        const pdfBase64 = pdfBuffer.toString("base64");
-
-                        return res.json({
-                            status: getUserResponse.status,
-                            message: "Invoice PDF generate successfully",
-                            data: { pdfBase64, pdfFileName }
-                        });
-                    } else {
-                        return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
-                    }
-                }
-            } else {
-                return res.json({ status: 204, data: null, message: req.t("WRONG_ORDER") });
-            }
-        } else {
-            console.log("error========>>", error);
-            return res.status(500).json({ message: req.t("CATCH_ERROR") });
-
-        }
-    }
-}
