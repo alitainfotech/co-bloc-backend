@@ -1,153 +1,365 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PDF</title>
-    <style type="text/css">        
-        @page  { size:5in 7.5in; margin:auto 0;} 
-        /* @page  { size:5in 11in; margin:auto;}  */
+    <style type="text/css">
+      @page {
+        size: 5in 7.5in;
+        margin: auto 0;
+      }
+      /* @page  { size:5in 11in; margin:auto;}  */
     </style>
-</head>
+  </head>
 
-<body>
-    <div style="width:100%; padding:5px; margin:auto;">
-        <table border="0" width="100%" cellspacing="0" cellpadding="0" style="font-family:arial;">
-            <tr>
-                <td style="padding:20px; border:1px solid #000; border-radius:10px; word-break: break-all;">
-                    <table border="0" width="100%" cellspacing="0" cellpadding="0" style="font-family:arial; border-spacing:0;">
-                        <tr>
-                            <td>
-                                <table border="0" width="100%" cellspacing="0" cellpadding="0"
-                                    style="border-bottom:1px solid #000;">
-                                    <tr>
-                                        <td
-                                            style="width:20%; border-right:1px solid #000; padding:10px; text-align:left;">
-                                            <span>
-                                                <img src="https://us-central1-co-bloc-backend-91ed7.cloudfunctions.net/app/images/co-bloc-sticker-logo.png"
-                                                    alt="co-bloc sticker logo" style="width: 100px;">
-                                            </span>
-                                        </td>
-                                        <td
-                                            style="width:15%; padding:0 10px; text-align:center; font-weight:bold; vertical-align:top;  white-space: nowrap;">
-                                            From:</td>
-                                        <td
-                                            style="width:65%; padding:0 20px 10px; vertical-align:top; font-size:16px; line-height:20px; color:#000;">
-                                            <table border="0" width="100%" cellspacing="0" cellpadding="0" align="top">
-                                                <tr>
-                                                    <td style="padding:0 0 5px; font-weight:bold">Co-Bloc</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="font-weight:normal;">63 Rue Richpanse</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="font-weight:normal;">Sartrouville</td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="font-weight:normal;">78500 </td>
-                                                </tr>
-                                                <tr>
-                                                    <td style="font-weight:normal;">France</td>
-                                                </tr>
-                                            </table>
-                                        </td>
-                                    </tr>
-                                </table>
+  <body>
+    <div style="width: 100%; padding: 5px; margin: auto">
+      <table
+        border="0"
+        width="100%"
+        cellspacing="0"
+        cellpadding="0"
+        style="font-family: arial"
+      >
+        <tr>
+          <td
+            style="
+              padding: 20px;
+              border: 1px solid #000;
+              border-radius: 10px;
+              word-break: break-all;
+            "
+          >
+            <table
+              border="0"
+              width="100%"
+              cellspacing="0"
+              cellpadding="0"
+              style="font-family: arial; border-spacing: 0"
+            >
+              <tr>
+                <td>
+                  <table
+                    border="0"
+                    width="100%"
+                    cellspacing="0"
+                    cellpadding="0"
+                    style="border-bottom: 1px solid #000"
+                  >
+                    <tr>
+                      <td
+                        style="
+                          width: 20%;
+                          border-right: 1px solid #000;
+                          padding: 10px;
+                          text-align: left;
+                        "
+                      >
+                        <span>
+                          <img
+                            src="https://us-central1-co-bloc-backend-91ed7.cloudfunctions.net/app/images/co-bloc-sticker-logo.png"
+                            alt="co-bloc sticker logo"
+                            style="width: 100px"
+                          />
+                        </span>
+                      </td>
+                      <td
+                        style="
+                          width: 15%;
+                          padding: 0 10px;
+                          text-align: center;
+                          font-weight: bold;
+                          vertical-align: top;
+                          white-space: nowrap;
+                        "
+                      >
+                        From:
+                      </td>
+                      <td
+                        style="
+                          width: 65%;
+                          padding: 0 20px 10px;
+                          vertical-align: top;
+                          font-size: 16px;
+                          line-height: 20px;
+                          color: #000;
+                        "
+                      >
+                        <table
+                          border="0"
+                          width="100%"
+                          cellspacing="0"
+                          cellpadding="0"
+                          align="top"
+                        >
+                          <tr>
+                            <td style="padding: 0 0 5px; font-weight: bold">
+                              Co-Bloc
                             </td>
-                        </tr>
-                        <tr>
-                            <td style="border-bottom:1px solid #000; padding:10px 0 10px 28%; color:#000; font-size:16px; line-height:20px;">
-                                <% if(ShippingFirstName && ShippingLastName && ShippingStreet && ShippingCity) { %>
-                                <table border="0" width="100%" cellspacing="0" cellpadding="0" style="margin:0 auto;">
-                                    <tr>
-                                        <td style="padding:0 0 5px; font-weight:bold; font-size:16px;">To:</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding:0 0 5px; font-weight:bold; font-size:20px;"><%= ShippingFirstName  %> <%= ShippingLastName %> </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:normal;"><%= ShippingStreet  %></td>
-                                    </tr>
-                                    <tr>
-                                        <td style="font-weight:normal;"><%= ShippingCity   %></td>
-                                    </tr>
-                                </table>
-                                <% } else { %>
-                                    <table border="0" width="100%" cellspacing="0" cellpadding="0" style="margin:0 auto;">
-                                        <tr>
-                                            <td style="padding:0 0 5px; font-weight:bold; font-size:16px;">To:</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding:0 0 5px; font-weight:bold; font-size:20px;"><%= Customer_Name  %> <%= Customer_Last_Name %></td>
-                                        </tr>
-                                        <tr>
-                                            <td style="font-weight:normal;"><%= Billing_Street  %></td>
-                                        </tr>
-                                        <tr>
-                                            <td style="font-weight:normal;"><%= Billing_City   %></td>
-                                        </tr>
-                                    </table>
-                                <% } %>
+                          </tr>
+                          <tr>
+                            <td style="font-weight: normal">
+                              63 Rue Richpanse
                             </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="border-bottom:1px solid #000; padding:10px 0; color:#000; font-size:16px; line-height:normal;">
-                                <table border="0" width="100%" cellspacing="0" cellpadding="0" style="margin:0 auto;">
-                                    <tr>
-                                        <td style="width:24%; padding:0 0 5px; font-weight:bold; font-size:28px;">Order
-                                            nr.: <br />
-                                            <%= OrderNumber %>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:76%; font-weight:normal;"></td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td
-                                style="border-bottom:1px solid #000; padding:0; color:#000; font-size:16px; line-height:normal;">
-                                <table border="0" width="100%" cellspacing="0" cellpadding="0">
-                                    <tr>
-                                        <td
-                                            style="width:50%; padding:20px 0; color:#000; font-size:16px; line-height:normal;">
-                                            Ref Number:</td>
-                                        <td
-                                            style="width:50%; padding:20px 20px; color:#000; font-size:16px; line-height:normal; border-left:1px solid #000;">
-                                            Lot Number:</td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td style="padding:10px 0; color:#000; font-size:16px; line-height:normal;">
-                                <table border="0" width="100%" cellspacing="0" cellpadding="0" style="margin:0 auto;">
-                                    <tr>
-                                        <td style="width:100%; padding:0 0 10px; font-weight:bold; font-size:24px;">
-                                            <span style=" display:inline-block; vertical-align:top;">
-                                                <span style="font-size:18px;">Item nr.:</span>
-                                                <br />607388000000473199</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td style="width:100%; font-weight:normal; color:#000; font-size:15px;">
-                                            <span
-                                                style="border-top:1px solid #000; padding:10px 0 0; display:inline-block; vertical-align:top;">Delivery
-                                                Instruction:</span> <br />
-                                            <span style="font-size:14px; color:#666;">Leave with receptionist</span>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
+                          </tr>
+                          <tr>
+                            <td style="font-weight: normal">Sartrouville</td>
+                          </tr>
+                          <tr>
+                            <td style="font-weight: normal">78500</td>
+                          </tr>
+                          <tr>
+                            <td style="font-weight: normal">France</td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
                 </td>
-            </tr>
-        </table>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    border-bottom: 1px solid #000;
+                    padding: 10px 0 10px 28%;
+                    color: #000;
+                    font-size: 16px;
+                    line-height: 20px;
+                  "
+                >
+                  <% if(ShippingFirstName && ShippingLastName && ShippingStreet
+                  && ShippingCity) { %>
+                  <table
+                    border="0"
+                    width="100%"
+                    cellspacing="0"
+                    cellpadding="0"
+                    style="margin: 0 auto"
+                  >
+                    <tr>
+                      <td
+                        style="
+                          padding: 0 0 5px;
+                          font-weight: bold;
+                          font-size: 16px;
+                        "
+                      >
+                        To:
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        style="
+                          padding: 0 0 5px;
+                          font-weight: bold;
+                          font-size: 20px;
+                        "
+                      >
+                        <%= ShippingFirstName %> <%= ShippingLastName %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: normal"><%= ShippingStreet %></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: normal"><%= ShippingCity %></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: normal">
+                        <%= ShippingCountry %>
+                      </td>
+                    </tr>
+                  </table>
+                  <% } else { %>
+                  <table
+                    border="0"
+                    width="100%"
+                    cellspacing="0"
+                    cellpadding="0"
+                    style="margin: 0 auto"
+                  >
+                    <tr>
+                      <td
+                        style="
+                          padding: 0 0 5px;
+                          font-weight: bold;
+                          font-size: 16px;
+                        "
+                      >
+                        To:
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        style="
+                          padding: 0 0 5px;
+                          font-weight: bold;
+                          font-size: 20px;
+                        "
+                      >
+                        <%= Customer_Name %> <%= Customer_Last_Name %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: normal"><%= Billing_Street %></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: normal"><%= Billing_City %></td>
+                    </tr>
+                    <tr>
+                      <td style="font-weight: normal">
+                        <%= Billing_Country %>
+                      </td>
+                    </tr>
+                  </table>
+                  <% } %>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    border-bottom: 1px solid #000;
+                    padding: 10px 0;
+                    color: #000;
+                    font-size: 16px;
+                    line-height: normal;
+                  "
+                >
+                  <table
+                    border="0"
+                    width="100%"
+                    cellspacing="0"
+                    cellpadding="0"
+                    style="margin: 0 auto"
+                  >
+                    <tr>
+                      <td
+                        style="
+                          width: 24%;
+                          padding: 0 0 5px;
+                          font-weight: bold;
+                          font-size: 28px;
+                        "
+                      >
+                        Order nr.: <br />
+                        <%= OrderNumber %>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="width: 76%; font-weight: normal"></td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    border-bottom: 1px solid #000;
+                    padding: 0;
+                    color: #000;
+                    font-size: 16px;
+                    line-height: normal;
+                  "
+                >
+                  <table
+                    border="0"
+                    width="100%"
+                    cellspacing="0"
+                    cellpadding="0"
+                  >
+                    <tr>
+                      <td
+                        style="
+                          width: 50%;
+                          padding: 20px 0;
+                          color: #000;
+                          font-size: 16px;
+                          line-height: normal;
+                        "
+                      >
+                        Ref Number:
+                      </td>
+                      <td
+                        style="
+                          width: 50%;
+                          padding: 20px 20px;
+                          color: #000;
+                          font-size: 16px;
+                          line-height: normal;
+                          border-left: 1px solid #000;
+                        "
+                      >
+                        Lot Number:
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td
+                  style="
+                    padding: 10px 0;
+                    color: #000;
+                    font-size: 16px;
+                    line-height: normal;
+                  "
+                >
+                  <table
+                    border="0"
+                    width="100%"
+                    cellspacing="0"
+                    cellpadding="0"
+                    style="margin: 0 auto"
+                  >
+                    <tr>
+                      <td
+                        style="
+                          width: 100%;
+                          padding: 0 0 10px;
+                          font-weight: bold;
+                          font-size: 24px;
+                        "
+                      >
+                        <span
+                          style="display: inline-block; vertical-align: top"
+                        >
+                          <span style="font-size: 18px">Item nr.:</span>
+                          <br />607388000000473199</span
+                        >
+                      </td>
+                    </tr>
+                    <tr>
+                      <td
+                        style="
+                          width: 100%;
+                          font-weight: normal;
+                          color: #000;
+                          font-size: 15px;
+                        "
+                      >
+                        <span
+                          style="
+                            border-top: 1px solid #000;
+                            padding: 10px 0 0;
+                            display: inline-block;
+                            vertical-align: top;
+                          "
+                          >Delivery Instruction:</span
+                        >
+                        <br />
+                        <span style="font-size: 14px; color: #666"
+                          >Leave with receptionist</span
+                        >
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>
-</body>
-
+  </body>
 </html>
