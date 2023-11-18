@@ -624,8 +624,7 @@ exports.ZohoWebhook = async (req, res) => {
 
     const messageData = {
       from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
-      to: "divya.alitainfotech@gmail.com",
-      // to: "info@entertainment-lab.fr",
+      to: responseData.Email,
       subject: `Order Shipment Notification for Your Co-bloc Game`,
       html: html,
     };
@@ -650,6 +649,7 @@ exports.ZohoWebhook = async (req, res) => {
       ShippingStreet: responseData.Shipping_Street,
       ShippingCity: responseData.Shipping_City,
       OrderNumber: responseData.Order_Id,
+      ShippingCountry: responseData.Shipping_Country,
     });
 
     const browser = await puppeteer.launch({ headless: "new" });
@@ -667,8 +667,7 @@ exports.ZohoWebhook = async (req, res) => {
 
     const messageDataForShipping = {
       from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
-      //   to: "info@entertainment-lab.fr",
-      to: "divya.alitainfotech@gmail.com",
+      to: "info@entertainment-lab.fr",
       subject: `Order Shipping Sticker Notification`,
       html: "Your shipping notification message",
       attachment: [
