@@ -225,6 +225,7 @@ const sanitizeHtml = (html) => {
 };
 
 const dataSendWithMail = async (FormData) => {
+  console.log("*******************dataSendWithMail********************");
   const mailgun = new Mailgun(formData);
   const client = mailgun.client({
     username: process.env.MAILGUN_USERNAME,
