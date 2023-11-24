@@ -410,10 +410,8 @@ const commonMailFunction = async(mailInfo) => {
     secure: true,
     auth: {
       // TODO: replace `user` and `pass` values from <https://forwardemail.net>
-      // user: process.env.NODEMAILER_USERID,
-      // pass: process.env.NODEMAILER_PASSWORD,
-      user: "test.alitainfotech@gmail.com",
-      pass: "bwwrprvjtgnzgssl",
+      user: process.env.NODEMAILER_USERID,
+      pass: process.env.NODEMAILER_PASSWORD,
     },
   });
   console.log("mailInfo------------------", mailInfo.subject);
