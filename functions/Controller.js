@@ -25,6 +25,8 @@ const {
   generateInvoicePDF,
   sendEmail,
   invoicePDF,
+  commonMailFunction,
+  findCountryName
 } = require("./services/commonFuncions");
 
 exports.RefreshAccessToken = async (req, res) => {
@@ -61,7 +63,7 @@ exports.RefreshAccessToken = async (req, res) => {
       res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") });
     }
   } catch (error) {
-    console.error("Error refreshing access token:", error);
+    console.error("Error refreshing access token in Controller 65:", error);
     res.status(500).json({ error: req.t("ACCESS_TOKEN_ERROR") });
   }
 };
@@ -140,14 +142,13 @@ exports.addUser = async (req, res) => {
       error.response &&
       STATUS_CODE.includes(error.response.status) &&
       STATUS_ERROR.includes(error.response.data.code)
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      const decryptToken = await decryptAccessToken(
-        newAccessToken,
-        process.env.SECRET_KEY
-      );
-
+    ) {      
       try {
+        const newAccessToken = await refreshAccessToken();
+        const decryptToken = await decryptAccessToken(
+          newAccessToken,
+          process.env.SECRET_KEY
+        );
         const checkUserResponse = await axios.get(
           `${process.env.ZOHO_CRM_V5_URL}/Customer/search?criteria=((Email:equals:${req.body.data[0].Email}))`,
           {
@@ -227,14 +228,13 @@ exports.Payment = async (req, res) => {
       error.response &&
       STATUS_CODE.includes(error.response.status) &&
       STATUS_ERROR.includes(error.response.data.code)
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      const decryptToken = await decryptAccessToken(
-        newAccessToken,
-        process.env.SECRET_KEY
-      );
-
+    ) {      
       try {
+        const newAccessToken = await refreshAccessToken();
+        const decryptToken = await decryptAccessToken(
+          newAccessToken,
+          process.env.SECRET_KEY
+        );
         const responseData = await commonFunForCatch(
           zohoApiBaseUrlforPayment,
           "post",
@@ -301,14 +301,13 @@ exports.Order = async (req, res) => {
       error.response &&
       STATUS_CODE.includes(error.response.status) &&
       STATUS_ERROR.includes(error.response.data.code)
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      const decryptToken = await decryptAccessToken(
-        newAccessToken,
-        process.env.SECRET_KEY
-      );
-
+    ) {      
       try {
+        const newAccessToken = await refreshAccessToken();
+        const decryptToken = await decryptAccessToken(
+          newAccessToken,
+          process.env.SECRET_KEY
+        );
         const responseData = await commonFunForCatch(
           zohoApiBaseUrlforOrder,
           "post",
@@ -359,14 +358,13 @@ exports.Invoice = async (req, res) => {
       error.response &&
       STATUS_CODE.includes(error.response.status) &&
       STATUS_ERROR.includes(error.response.data.code)
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      const decryptToken = await decryptAccessToken(
-        newAccessToken,
-        process.env.SECRET_KEY
-      );
-
+    ) {      
       try {
+        const newAccessToken = await refreshAccessToken();
+        const decryptToken = await decryptAccessToken(
+          newAccessToken,
+          process.env.SECRET_KEY
+        );
         const responseData = await commonFunForCatch(
           zohoApiBaseUrlforInvoice,
           "post",
@@ -383,15 +381,15 @@ exports.Invoice = async (req, res) => {
                 : pdfGenerate.message
             );
         }
-        // return res.status(200).send(responseData);
+        return res.status(200).send(responseData);
       } catch (error) {
         console.log("Invoice error", error);
-        await dataSendWithMail(FormData);
+        // await dataSendWithMail(FormData);
         return res.status(500).json({ message: req.t("CATCH_ERROR") });
       }
     } else {
       console.log("Invoice error", error);
-      await dataSendWithMail(FormData);
+      // await dataSendWithMail(FormData);
       return res.status(500).json({ message: req.t("CATCH_ERROR") });
     }
   }
@@ -444,14 +442,13 @@ exports.Support = async (req, res) => {
       error.response &&
       STATUS_CODE.includes(error.response.status) &&
       STATUS_ERROR.includes(error.response.data.code)
-    ) {
-      const newAccessToken = await refreshAccessToken();
-      const decryptToken = await decryptAccessToken(
-        newAccessToken,
-        process.env.SECRET_KEY
-      );
-
+    ) {      
       try {
+        const newAccessToken = await refreshAccessToken();
+        const decryptToken = await decryptAccessToken(
+          newAccessToken,
+          process.env.SECRET_KEY
+        );
         const responseData = await commonFunForCatch(
           zohoApiBaseUrlForSupport,
           "post",
@@ -503,36 +500,42 @@ exports.checkOrderIdandSONumber = async (req, res) => {
       STATUS_CODE.includes(error.response.status) &&
       STATUS_ERROR.includes(error.response.data.code)
     ) {
-      const newAccessToken = await refreshAccessToken();
-      const decryptToken = await decryptAccessToken(
-        newAccessToken,
-        process.env.SECRET_KEY
-      );
+      try {
+        const newAccessToken = await refreshAccessToken();
+        const decryptToken = await decryptAccessToken(
+          newAccessToken,
+          process.env.SECRET_KEY
+        );
 
-      const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
+        const searchCriteria = `(Order_Id:equals:${req.body.order_id}) and (SO_Number:equals:${req.body.so_number})`;
 
-      const checkUserResponse = await axios.get(
-        `${zohoApiBaseUrlforOrder}/search?criteria=${searchCriteria}`,
-        {
-          headers: getZohoHeaders(decryptToken),
+        const checkUserResponse = await axios.get(
+          `${zohoApiBaseUrlforOrder}/search?criteria=${searchCriteria}`,
+          {
+            headers: getZohoHeaders(decryptToken),
+          }
+        );
+
+        if (
+          checkUserResponse.status === 200 ||
+          checkUserResponse.status === 201
+        ) {
+          return res.json({
+            status: 200,
+            data: { Order_Id: checkUserResponse?.data?.data[0].Order_Id },
+          });
+        } else {
+          return res.json({
+            status: 204,
+            data: null,
+            message: req.t("WRONG_ORDER"),
+          });
         }
-      );
-
-      if (
-        checkUserResponse.status === 200 ||
-        checkUserResponse.status === 201
-      ) {
-        return res.json({
-          status: 200,
-          data: { Order_Id: checkUserResponse?.data?.data[0].Order_Id },
-        });
-      } else {
-        return res.json({
-          status: 204,
-          data: null,
-          message: req.t("WRONG_ORDER"),
-        });
+      } catch (error) {
+        console.log("error========>>", error);
+        return res.status(500).json({ message: req.t("CATCH_ERROR") });
       }
+      
     } else {
       console.log("error========>>", error);
       return res.status(500).json({ message: req.t("CATCH_ERROR") });
@@ -563,23 +566,28 @@ exports.checkEmail = async (req, res) => {
       STATUS_CODE.includes(error.response.status) &&
       STATUS_ERROR.includes(error.response.data.code)
     ) {
-      const newAccessToken = await refreshAccessToken();
-      const decryptToken = await decryptAccessToken(
-        newAccessToken,
-        process.env.SECRET_KEY
-      );
+      try {
+        const newAccessToken = await refreshAccessToken();
+        const decryptToken = await decryptAccessToken(
+          newAccessToken,
+          process.env.SECRET_KEY
+        );
 
-      const checkUserResponse = await axios.get(
-        `${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`,
-        {
-          headers: getZohoHeaders(decryptToken),
+        const checkUserResponse = await axios.get(
+          `${zohoApiBaseUrl}/search?criteria=(Email:equals:${req.body.data[0].Email})`,
+          {
+            headers: getZohoHeaders(decryptToken),
+          }
+        );
+        if (checkUserResponse.status === 200) {
+          return res.json({ status: 200, data: { isValid: true } });
+        } else {
+          return res.json({ status: 204, data: { isValid: false } });
         }
-      );
-      if (checkUserResponse.status === 200) {
-        return res.json({ status: 200, data: { isValid: true } });
-      } else {
-        return res.json({ status: 204, data: { isValid: false } });
-      }
+      } catch (error) {
+        console.log("error========>>", error);
+        return res.status(500).json({ message: req.t("CATCH_ERROR") });
+      }      
     } else {
       console.log("error========>>", error);
       return res.status(500).json({ message: req.t("CATCH_ERROR") });
@@ -588,6 +596,7 @@ exports.checkEmail = async (req, res) => {
 };
 
 exports.ZohoWebhook = async (req, res) => {
+  console.log("**************************Zoho Webhook*******************************", req.body);
   const zohoApiBaseUrlforOrder = `${process.env.ZOHO_CRM_V5_URL}/Sales_Orders`;
   try {
     const orderId = req.body.OrderId;
@@ -603,8 +612,8 @@ exports.ZohoWebhook = async (req, res) => {
     const response = await axios.get(`${zohoApiBaseUrlforOrder}/${orderId}`, {
       headers: getZohoHeaders(decryptToken),
     });
+    
     const responseData = response.data.data[0];
-
     // Order Confirmation EJS
     const htmlTemplatePath = path.join(__dirname, "./orderConfirmation.ejs");
     const htmltemplateContent = fs.readFileSync(htmlTemplatePath, "utf8");
@@ -639,6 +648,10 @@ exports.ZohoWebhook = async (req, res) => {
       "utf8"
     );
 
+    // Find ShippingCountry dataKey
+    const shippingCountryCode = responseData.Shipping_Country;
+    const shippingCountryName = findCountryName(shippingCountryCode);
+
     const htmlForShipping = ejs.render(htmltemplateContentForShipping, {
       Customer_Name: responseData.Customer_Name.name,
       Customer_Last_Name: responseData.Customer_Last_Name,
@@ -649,7 +662,7 @@ exports.ZohoWebhook = async (req, res) => {
       ShippingStreet: responseData.Shipping_Street,
       ShippingCity: responseData.Shipping_City,
       OrderNumber: responseData.Order_Id,
-      ShippingCountry: responseData.Shipping_Country,
+      ShippingCountry: shippingCountryName,
     });
 
     const browser = await puppeteer.launch({ headless: "new" });
@@ -658,12 +671,12 @@ exports.ZohoWebhook = async (req, res) => {
     const pdfBuffer = await page.pdf();
     await browser.close();
 
-    const mailgun = new Mailgun(formData);
-    const client = mailgun.client({
-      username: process.env.MAILGUN_USERNAME,
-      key: process.env.API_KEY,
-      url: process.env.MAILGUN_URL,
-    });
+    // const mailgun = new Mailgun(formData);
+    // const client = mailgun.client({
+    //   username: process.env.MAILGUN_USERNAME,
+    //   key: process.env.API_KEY,
+    //   url: process.env.MAILGUN_URL,
+    // });
 
     const messageDataForShipping = {
       from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
@@ -672,18 +685,20 @@ exports.ZohoWebhook = async (req, res) => {
       html: "Your shipping notification message",
       attachment: [
         {
-          data: pdfBuffer,
+          content: new Buffer(pdfBuffer, 'base64'),
           filename: `${responseData?.Order_Id} Order Shipping.pdf`,
+          contentType: 'application/pdf'
         },
       ],
     };
-
-    await sendEmail(client, messageData, "Email sent successfully:");
-    await sendEmail(
-      client,
-      messageDataForShipping,
-      "Shipping email sent successfully:"
-    );
+    await commonMailFunction(messageData);
+    await commonMailFunction(messageDataForShipping);
+    // await sendEmail(client, messageData, "Email sent successfully:");
+    // await sendEmail(
+    //   client,
+    //   messageDataForShipping,
+    //   "Shipping email sent successfully:"
+    // );
 
     return res.status(200).send("Emails sent successfully");
   } catch (error) {

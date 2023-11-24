@@ -1,4 +1,5 @@
 var CryptoJS = require("crypto-js");
+const nodemailer = require("nodemailer");
 const axios = require("axios");
 const { REFRESH_TOKEN } = require("../commonConstant");
 const Mailgun = require("mailgun.js");
@@ -146,12 +147,12 @@ const invoicePDF = async (response, decryptToken) => {
     ) {
       const invoiceData = getInvoiceResponse.data.data[0];
 
-      const mailgun = new Mailgun(formData);
-      const client = mailgun.client({
-        username: process.env.MAILGUN_USERNAME,
-        key: process.env.API_KEY,
-        url: process.env.MAILGUN_URL,
-      });
+      // const mailgun = new Mailgun(formData);
+      // const client = mailgun.client({
+      //   username: process.env.MAILGUN_USERNAME,
+      //   key: process.env.API_KEY,
+      //   url: process.env.MAILGUN_URL,
+      // });
 
       const pdfBuffer = await generateInvoicePDF(invoiceData);
 
@@ -176,8 +177,9 @@ const invoicePDF = async (response, decryptToken) => {
         html: html,
         attachment: [
           {
-            data: pdfBuffer,
+            content: new Buffer(pdfBuffer, 'base64'),
             filename: `${invoiceData?.Invoice_Number}.pdf`,
+            contentType: 'application/pdf'
           },
         ],
       };
@@ -187,16 +189,16 @@ const invoicePDF = async (response, decryptToken) => {
         pdfBase64: pdfBase64,
         pdfFileName: pdfFileName,
       };
-
-      client.messages
-        .create(process.env.DOMAIN, messageData)
-        .then((response) => {
-          console.log("Email sent successfully:", response);
-          //   return { getInvoiceResponse, pdfResponseObj };
-        })
-        .catch((err) => {
-          console.log("Error sending email", err);
-        });
+      await commonMailFunction(messageData)
+      // client.messages
+      //   .create(process.env.DOMAIN, messageData)
+      //   .then((response) => {
+      //     console.log("Email sent successfully:", response);
+      //     //   return { getInvoiceResponse, pdfResponseObj };
+      //   })
+      //   .catch((err) => {
+      //     console.log("Error sending email", err);
+      //   });
       return { getInvoiceResponse, pdfResponseObj };
     } else {
       return { getInvoiceResponse, message: req.t("FAILED_INVOICE") };
@@ -226,18 +228,28 @@ const sanitizeHtml = (html) => {
 
 const dataSendWithMail = async (FormData) => {
   console.log("*******************dataSendWithMail********************");
-  const mailgun = new Mailgun(formData);
-  const client = mailgun.client({
-    username: process.env.MAILGUN_USERNAME,
-    key: process.env.API_KEY,
-    url: process.env.MAILGUN_URL,
-  });
+  // const mailgun = new Mailgun(formData);
+  // const client = mailgun.client({
+  //   username: process.env.MAILGUN_USERNAME,
+  //   key: process.env.API_KEY,
+  //   url: process.env.MAILGUN_URL,
+  // });
 
   const messageData = {
     from: `Co-Bloc <Co-Bloc@${process.env.DOMAIN}>`,
     to: "info@entertainment-lab.fr",
     subject: `Urgent: Manual Entry Required for Purchase Info in Zoho CRM`,
-    html: `Dear Team,<br><br>
+    html: `
+    <tr>
+    <td colspan="4" style="text-align: left; background-color: #fff">
+        <span>
+            <img src="https://us-central1-co-bloc-backend-91ed7.cloudfunctions.net/app/images/co-bloc-logo.jpg"
+                alt="co-bloc logo">
+        </span>
+    </td>
+    </tr><br><br>
+    
+        Dear Team,<br><br>
 
         I wanted to bring to your attention a technical issue that has recently come to our notice regarding the addition of user details in Zoho CRM.
         
@@ -308,15 +320,15 @@ const dataSendWithMail = async (FormData) => {
         
         Co-Bloc support`,
   };
-
-  client.messages
-    .create(process.env.DOMAIN, messageData)
-    .then((response) => {
-      console.log("Email sent successfully:", response);
-    })
-    .catch((err) => {
-      console.log("Error sending email", err);
-    });
+  await commonMailFunction(messageData);
+  // client.messages
+  //   .create(process.env.DOMAIN, messageData)
+  //   .then((response) => {
+  //     console.log("Email sent successfully:", response);
+  //   })
+  //   .catch((err) => {
+  //     console.log("Error sending email", err);
+  //   });
 };
 
 // Create a rate limiter middleware function
@@ -390,6 +402,116 @@ const sendEmail = (client, messageData, successMessage) => {
       console.log("Error sending email", err);
     });
 };
+const commonMailFunction = async(mailInfo) => {
+  const transporter = nodemailer.createTransport({
+    host: "smtp.forwardemail.net",
+    port: 465,
+    service: "gmail",
+    secure: true,
+    auth: {
+      // TODO: replace `user` and `pass` values from <https://forwardemail.net>
+      user: process.env.NODEMAILER_USERID,
+      pass: process.env.NODEMAILER_PASSWORD,
+    },
+  });
+  console.log("mailInfo------------------", mailInfo.subject);
+  // async..await is not allowed in global scope, must use a wrapper
+  async function main() {
+    // send mail with defined transport object
+    const info = await transporter.sendMail({
+      from: mailInfo.from, // sender address
+      to: mailInfo.to, // list of receivers
+      subject: mailInfo.subject, // Subject line
+      text: mailInfo.text ? mailInfo.text : "", // plain text body
+      html: mailInfo.html ? mailInfo.html : "", // html body
+      attachments: mailInfo.attachment ? mailInfo.attachment : ""
+    });
+  
+    console.log("Message sent***********************: %s", info.messageId);
+  }
+  try {
+    await main()
+  } catch (error) {
+    console.log("****************send mail failed!**************", error)
+  }
+  // main().catch(console.error);
+}
+
+const optionData = [
+  { CountryName: "Select country", CountryCode: "", dataKey: "SELECT_COUNTRY" },
+  { CountryName: "Aland Islands", CountryCode: "AX", dataKey: "ALAND_ISLANDS" },
+  { CountryName: "Albania", CountryCode: "AL", dataKey: "ALBANIA" },
+  { CountryName: "Andorra", CountryCode: "AD", dataKey: "ANDORRA" },
+  { CountryName: "Austria", CountryCode: "AT", dataKey: "AUSTRIA" },
+  { CountryName: "Belarus", CountryCode: "BY", dataKey: "BELARUS" },
+  { CountryName: "Belgium", CountryCode: "BE", dataKey: "BELGIUM" },
+  {
+    CountryName: "Bosnia and Herzegovina",
+    CountryCode: "BA",
+    dataKey: "BOSNIA_AND_HERZEGOVINA",
+  },
+  { CountryName: "Bulgaria", CountryCode: "BG", dataKey: "BULGARIA" },
+  { CountryName: "Croatia", CountryCode: "HR", dataKey: "CROATIA" },
+  { CountryName: "Czech Republic", CountryCode: "CZ", dataKey: "CZECH_REPUBLIC" },
+  { CountryName: "Denmark", CountryCode: "DK", dataKey: "DENMARK" },
+  { CountryName: "Estonia", CountryCode: "EE", dataKey: "ESTONIA" },
+  { CountryName: "Faroe Islands", CountryCode: "FO", dataKey: "FRROE_ISLANDS" },
+  { CountryName: "Finland", CountryCode: "FI", dataKey: "FINLAND" },
+  { CountryName: "France", CountryCode: "FR", dataKey: "FRANCE" },
+  { CountryName: "Germany", CountryCode: "DE", dataKey: "GERMANY" },
+  { CountryName: "Gibraltar", CountryCode: "GI", dataKey: "GIBRALTAR" },
+  { CountryName: "Greece", CountryCode: "GR", dataKey: "GREECE" },
+  { CountryName: "Guernsey", CountryCode: "GG", dataKey: "GUERNSEY" },
+  {
+    CountryName: "Holy See (Vatican City State)",
+    CountryCode: "VA",
+    dataKey: "HOLY_SEE",
+  },
+  { CountryName: "Hungary", CountryCode: "HU", dataKey: "HUNGARY" },
+  { CountryName: "Iceland", CountryCode: "IE", dataKey: "ICELAND" },
+  { CountryName: "Ireland", CountryCode: "IR", dataKey: "IRELAND" },
+  { CountryName: "Isle of Man", CountryCode: "IM", dataKey: "ISLE_OF_MAN" },
+  { CountryName: "Italy", CountryCode: "IT", dataKey: "ITALY" },
+  { CountryName: "Jersey", CountryCode: "JE", dataKey: "JERSEY" },
+  { CountryName: "Kosovo", CountryCode: "XK", dataKey: "KOSOVO" },
+  { CountryName: "Latvia", CountryCode: "LV", dataKey: "LATVIA" },
+  { CountryName: "Liechtenstein", CountryCode: "LI", dataKey: "LIECHTENSTEIN" },
+  { CountryName: "Lithuania", CountryCode: "LT", dataKey: "LITHUANIA" },
+  { CountryName: "Luxembourg", CountryCode: "LU", dataKey: "LUXEMBOURG" },
+  {
+    CountryName: "Macedonia, the Former Yugoslav Republic of",
+    CountryCode: "MK",
+    dataKey: "MACEDONIA_THE_FORMER",
+  },
+  { CountryName: "Malta", CountryCode: "MT", dataKey: "MALTA" },
+  { CountryName: "Moldova, Republic of", CountryCode: "MD", dataKey: "MOLDOVA_REPUBLIC" },
+  { CountryName: "Monaco", CountryCode: "MC", dataKey: "MONACO" },
+  { CountryName: "Montenegro", CountryCode: "ME", dataKey: "MONTENEGRO" },
+  { CountryName: "Netherlands", CountryCode: "NL", dataKey: "NETHERLANDS" },
+  { CountryName: "Norway", CountryCode: "NO", dataKey: "NORWAY" },
+  { CountryName: "Poland", CountryCode: "PL", dataKey: "POLAND" },
+  { CountryName: "Portugal", CountryCode: "PT", dataKey: "PORTUGAL" },
+  { CountryName: "Romania", CountryCode: "RO", dataKey: "ROMANIA" },
+  { CountryName: "San Marino", CountryCode: "SM", dataKey: "SAN_MARINO" },
+  { CountryName: "Serbia", CountryCode: "RS", dataKey: "SERBIA" },
+  {
+    CountryName: "Serbia and Montenegro",
+    CountryCode: "CS",
+    dataKey: "SERBIA_AND_MONTENEGRO",
+  },
+  { CountryName: "Slovakia", CountryCode: "SK", dataKey: "SLOVAKIA" },
+  { CountryName: "Spain", CountryCode: "ES", dataKey: "SPAIN" },
+  { CountryName: "Svalbard and Jan Mayen", CountryCode: "SJ", dataKey: "SVALBARD_AND_JAN" },
+  { CountryName: "Sweden", CountryCode: "SE", dataKey: "SWEDEN" },
+  { CountryName: "Switzerland", CountryCode: "CH", dataKey: "SWITZERLAND" },
+  { CountryName: "Ukraine", CountryCode: "UA", dataKey: "UKRAINE" },
+  { CountryName: "United Kingdom", CountryCode: "UK", dataKey: "UNITED_KINGDOM" },
+];
+
+const findCountryName = (shippingCountryValue) => {
+  const countryOption = optionData.find(option => option.CountryCode === shippingCountryValue);
+  return countryOption ? countryOption.CountryName : null;
+}
 
 module.exports = {
   decryptAccessToken,
@@ -403,4 +525,6 @@ module.exports = {
   generateInvoicePDF,
   sendEmail,
   invoicePDF,
+  commonMailFunction,
+  findCountryName
 };
